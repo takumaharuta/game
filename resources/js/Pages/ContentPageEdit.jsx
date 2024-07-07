@@ -108,7 +108,6 @@ const ContentPageEdit = ({ content, isNewContent }) => {
                     )}
                 </div>
             </header>
-
             <main className="p-4">
                 <input
                     type="text"

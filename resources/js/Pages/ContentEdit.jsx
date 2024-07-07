@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { useDropzone } from 'react-dropzone';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+
 const ContentEdit = () => {
     const [content, setContent] = useState({ pages: [{ id: '1', images: [], choices: [] }] });
     const [isSaved, setIsSaved] = useState(false);
@@ -12,9 +13,11 @@ const ContentEdit = () => {
     const [choiceFlavor, setChoiceFlavor] = useState('default');
     const contentRef = useRef(null);
     const [mounted, setMounted] = useState(false);
+
     useEffect(() => {
         setMounted(true);
     }, []);
+
     const resizeImage = useCallback((file) => {
         return new Promise((resolve) => {
             const reader = new FileReader();
@@ -34,12 +37,14 @@ const ContentEdit = () => {
             reader.readAsDataURL(file);
         });
     }, []);
+
     const getNextPageId = (currentPageId) => {
         const parts = currentPageId.split('-');
         const mainNumber = parseInt(parts[0]);
         const nextMainNumber = mainNumber + 1;
-        return parts.length > 1
-            ? `${nextMainNumber}-${parts.slice(1).join('-')}`
+
+        return parts.length > 1 
+            ? `${nextMainNumber}-${parts.slice(1).join('-')}` 
             : `${nextMainNumber}`;
     };
     const onDrop = useCallback(async (acceptedFiles, pageId) => {
@@ -66,34 +71,42 @@ const ContentEdit = () => {
         }
     }, [mounted, resizeImage]);
 
-const { getRootProps, getInputProps } = useDropzone({
+    const { getRootProps, getInputProps } = useDropzone({
         onDrop: (acceptedFiles) => onDrop(acceptedFiles, editingPage),
         accept: 'image/*'
     });
+
     const handleChoiceInput = (index, value) => {
         const newInputs = [...choiceInputs];
         newInputs[index] = value;
         setChoiceInputs(newInputs);
     };
+
     const saveChoices = () => {
         const validChoices = choiceInputs.filter(choice => choice.text.trim() !== '');
         if (validChoices.length < 2) {
             alert('少なくとも2つの選択肢を入力してください。');
             return;
         }
+
+
         setContent(prevContent => {
             const newPages = [...prevContent.pages];
             const currentPageIndex = newPages.findIndex(page => page.id === editingPage);
             const currentPage = { ...newPages[currentPageIndex] };
+
+            
             const nextMainNumber = parseInt(currentPage.id.split('-')[0]) + 1;
             const newChoices = validChoices.map((choice, index) => ({
                 text: choice.text,
                 flavor: choiceFlavor,
                 nextPageId: `${nextMainNumber}-${index + 1}${currentPage.id.includes('-') ? currentPage.id.slice(currentPage.id.indexOf('-')) : ''}`
             }));
+
             currentPage.choices = newChoices;
             currentPage.images = [];
             newPages[currentPageIndex] = currentPage;
+
             // 新しいページを追加
             newChoices.forEach((choice) => {
                 if (!prevContent.pages.some(page => page.id === choice.nextPageId)) {
@@ -104,8 +117,11 @@ const { getRootProps, getInputProps } = useDropzone({
                     });
                 }
             });
+
+
             return { ...prevContent, pages: newPages };
         });
+
         setEditingPage(null);
         setEditMode(null);
         setChoiceInputs([]);
@@ -119,10 +135,12 @@ const { getRootProps, getInputProps } = useDropzone({
             console.error('Error saving content:', error);
         }
     };
+
     const addNewPage = (pageId) => {
         setContent(prevContent => {
             const newPages = [...prevContent.pages];
             let newPageId;
+
             if (pageId.includes('-')) {
                 // 分岐ページの場合
                 const [mainId, subId] = pageId.split('-');
@@ -132,15 +150,18 @@ const { getRootProps, getInputProps } = useDropzone({
                 newPageId = `${parseInt(pageId) + 1}`;
             }
             console.log(newPageId);
+    
             // 新しいページを挿入する正しい位置を見つける
             const currentIndex = newPages.findIndex(p => p.id === pageId);
             let insertIndex = currentIndex + 1;
-            while (insertIndex < newPages.length &&
+            while (insertIndex < newPages.length && 
                    (parseInt(newPages[insertIndex].id.split('-')[0]) <= parseInt(newPageId.split('-')[0]))) {
                 insertIndex++;
             }
+    
             // 新しいページを挿入
             newPages.splice(insertIndex, 0, { id: newPageId, images: [], choices: [] });
+            
             // 後続のページのIDを更新
             for (let i = insertIndex + 1; i < newPages.length; i++) {
                 const currentId = newPages[i].id;
@@ -153,15 +174,18 @@ const { getRootProps, getInputProps } = useDropzone({
                     newPages[i].id = `${parseInt(currentId) + 1}`;
                 }
             }
+    
             return { ...prevContent, pages: newPages };
         });
     };
+    
     const deletePage = (pageId) => {
         setContent(prevContent => {
             const newPages = prevContent.pages.filter(page => page.id !== pageId);
             return { ...prevContent, pages: newPages };
         });
     };
+
     const renderPages = (pages) => {
         const rootPages = pages.filter(page => !page.id.includes('-'));
         return (
@@ -189,11 +213,13 @@ const { getRootProps, getInputProps } = useDropzone({
             </div>
         );
     };
-const PageContent = ({ page, isChild = false }) => {
+
+    const PageContent = ({ page, isChild = false }) => {
         const { getRootProps: getPageRootProps, getInputProps: getPageInputProps } = useDropzone({
             onDrop: (acceptedFiles) => onDrop(acceptedFiles, page.id),
             accept: 'image/*'
         });
+
         const handleEdit = () => {
             setEditingPage(page.id);
             if (page.images.length > 0) {
@@ -208,6 +234,7 @@ const PageContent = ({ page, isChild = false }) => {
                 setChoiceFlavor('default');
             }
         };
+
         return (
             <div className="mb-4 p-4 border rounded shadow-md relative w-96 flex flex-col">
                 <div className="overflow-auto">
@@ -244,25 +271,31 @@ const PageContent = ({ page, isChild = false }) => {
             </div>
         );
     };
+
     const handleDeleteChoice = (index) => {
         setContent(prevContent => {
             const currentPage = prevContent.pages.find(page => page.id === editingPage);
             const choiceToDelete = currentPage.choices[index];
             const childPageId = choiceToDelete.nextPageId;
             const childPage = prevContent.pages.find(page => page.id === childPageId);
+
             if (childPage && childPage.images.length > 0) {
                 if (!window.confirm('この選択肢のルート先に画像が存在します。本当に削除しますか？')) {
                     return prevContent;
                 }
             }
+
             const newChoices = currentPage.choices.filter((_, i) => i !== index);
-            const newPages = prevContent.pages.map(page =>
+            const newPages = prevContent.pages.map(page => 
                 page.id === editingPage ? { ...page, choices: newChoices } : page
             ).filter(page => page.id !== childPageId);
+
             return { ...prevContent, pages: newPages };
         });
+
         setChoiceInputs(prevInputs => prevInputs.filter((_, i) => i !== index));
     };
+
     const handleSetNextPage = (index) => {
         const pageOptions = content.pages.map(page => page.id);
         const selectedNextPage = window.prompt("遷移先のページIDを選択してください", choiceInputs[index].nextPageId || "");
@@ -274,9 +307,11 @@ const PageContent = ({ page, isChild = false }) => {
             alert("選択されたページIDは存在しません。");
         }
     };
+
     if (!mounted) {
         return null;
     }
+
     return (
         <div className="h-screen flex flex-col overflow-hidden">
             <header className="flex-shrink-0 flex justify-between items-center bg-blue-500 p-4 shadow-md text-white">
@@ -284,8 +319,8 @@ const PageContent = ({ page, isChild = false }) => {
                 <div className="flex space-x-4">
                     {!isSaved ? (
                         <>
-                            <select
-                                value={scrollType}
+                            <select 
+                                value={scrollType} 
                                 onChange={(e) => setScrollType(e.target.value)}
                                 className="bg-blue-700 text-white py-2 px-4 rounded"
                             >
@@ -343,13 +378,13 @@ const PageContent = ({ page, isChild = false }) => {
                                             placeholder={`選択肢 ${index + 1}`}
                                             className="flex-grow p-2 border rounded mr-2"
                                         />
-                                        <button
+                                        <button 
                                             onClick={() => handleDeleteChoice(index)}
                                             className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded mr-2"
                                         >
                                             削除
                                         </button>
-                                        <button
+                                        <button 
                                             onClick={() => handleSetNextPage(index)}
                                             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
                                         >
@@ -357,7 +392,7 @@ const PageContent = ({ page, isChild = false }) => {
                                         </button>
                                     </div>
                                 ))}
-                                <button
+                                <button 
                                     onClick={() => setChoiceInputs([...choiceInputs, { text: '', nextPageId: null }])}
                                     className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4"
                                 >
@@ -388,4 +423,5 @@ const PageContent = ({ page, isChild = false }) => {
         </div>
     );
 };
+
 export default ContentEdit;

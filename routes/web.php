@@ -5,6 +5,13 @@ use App\Http\Controllers\ContentController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+<<<<<<< HEAD
+=======
+use App\Http\Controllers\ContentController;
+use App\Http\Controllers\ContentPageController;
+
+
+>>>>>>> origin/master
 
 /*
 |--------------------------------------------------------------------------
