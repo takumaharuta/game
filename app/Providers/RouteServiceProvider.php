@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 
 class RouteServiceProvider extends ServiceProvider
 {
+    protected $namespace = 'App\\Http\\Controllers';
     /**
      * The path to your application's "home" route.
      *
@@ -24,6 +25,7 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
@@ -35,6 +37,7 @@ class RouteServiceProvider extends ServiceProvider
 
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
+        
         });
     }
 }

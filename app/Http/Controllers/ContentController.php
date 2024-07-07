@@ -2,21 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Content;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class ContentController extends Controller
 {
-    //
     public function store(Request $request)
     {
-        $content = Content::create($request->all());
+        $validatedData = $request->validate([
+            // バリデーションルールを追加
+        ]);
+
+        $content = Content::create($validatedData);
         return response()->json($content, 201);
     }
 
     public function update(Request $request, Content $content)
     {
-        $content->update($request->all());
+        $this->authorize('update', $content);
+
+        $validatedData = $request->validate([
+            // バリデーションルールを追加
+        ]);
+
+        $content->update($validatedData);
         return response()->json($content);
     }
 
@@ -24,16 +35,45 @@ class ContentController extends Controller
     {
         return response()->json($content->load('pages.choices'));
     }
-    
-    
-    /*ここからしたを追加した*/
+
     public function edit($id = null)
     {
-        return Inertia::render('ContentEdit', ['contentId' => $id]);
+        if ($id) {
+            $content = Content::findOrFail($id);
+            $this->authorize('update', $content);
+        } else {
+            $content = new Content();
+            $this->authorize('create', Content::class);
+        }
+        return Inertia::render('ContentEdit', ['content' => $content]);
+    }
+    
+    public function editContentPage($id = null)
+    {
+        if ($id) {
+            $contentPage = ContentPage::with('content')->findOrFail($id);
+            $this->authorize('update', $contentPage);
+        } else {
+            $contentPage = new ContentPage();
+            $this->authorize('create', ContentPage::class);
+        }
+    
+        return Inertia::render('ContentPageEdit', [
+            'contentPage' => $contentPage,
+            'isNewContentPage' => $id === null
+        ]);
     }
 
     public function preview($id)
     {
-        return Inertia::render('Preview', ['contentId' => $id]);
+        $content = Content::findOrFail($id);
+        return Inertia::render('Preview', ['content' => $content]);
     }
+
+    public function showContentPage($id)
+    {
+        $content = Content::with('pages.choices')->findOrFail($id);
+        return Inertia::render('ContentPage', ['content' => $content]);
+    }
+
 }
