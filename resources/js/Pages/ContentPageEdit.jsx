@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios'; // axios をインポート
 
-const ContentPageEdit = () => {
+const ContentPageEdit = ({ content, isNewContent }) => {
     const [title, setTitle] = useState('');
     const [coverImage, setCoverImage] = useState(null);
     const [discount, setDiscount] = useState('0');
@@ -15,8 +16,16 @@ const ContentPageEdit = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // ここでAPIから既存のデータを取得する処理を実装
-    }, []);
+        if (!isNewContent && content) {
+            setTitle(content.title || '');
+            setDiscount(content.discount || '0');
+            setPrice(content.price || '');
+            setTags(content.tags || []);
+            setDescription(content.description || '');
+            setIsPublished(content.isPublished || false);
+            // Note: coverImage might need special handling depending on how it's stored
+        }
+    }, [content, isNewContent]);
 
     useEffect(() => {
         setIsDirty(true);
@@ -29,16 +38,43 @@ const ContentPageEdit = () => {
     const { getRootProps, getInputProps } = useDropzone({ onDrop });
 
     const handleSave = async () => {
-        // ここで保存処理を実装
-        // APIを呼び出してデータを保存
-        setIsDirty(false);
+        try {
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('discount', discount);
+            formData.append('price', price);
+            formData.append('tags', JSON.stringify(tags));
+            formData.append('description', description);
+            formData.append('isPublished', isPublished);
+            if (coverImage) {
+                formData.append('coverImage', coverImage);
+            }
+
+            let response;
+            if (isNewContent) {
+                response = await axios.post('/api/content', formData);
+            } else {
+                response = await axios.put(`/api/content/${content.id}`, formData);
+            }
+
+            setIsDirty(false);
+            navigate(`/content-page/${response.data.id}`);
+        } catch (error) {
+            console.error('Error saving content:', error);
+            // ここでエラーハンドリングを実装（例：エラーメッセージの表示）
+        }
     };
 
-    const handlePublishToggle = () => {
+    const handlePublishToggle = async () => {
         const action = isPublished ? '出品停止' : '出品';
         if (window.confirm(`${action}しますか？`)) {
-            setIsPublished(!isPublished);
-            // ここでAPI呼び出しを実装して出品状態を更新
+            try {
+                await axios.put(`/api/content/${content.id}/toggle-publish`);
+                setIsPublished(!isPublished);
+            } catch (error) {
+                console.error('Error toggling publish status:', error);
+                // ここでエラーハンドリングを実装
+            }
         }
     };
 
@@ -60,14 +96,16 @@ const ContentPageEdit = () => {
     return (
         <div className="content-page-edit">
             <header className="flex justify-between items-center p-4 bg-blue-500 text-white">
-                <h1 className="text-2xl font-bold">作品編集</h1>
+                <h1 className="text-2xl font-bold">{isNewContent ? '新規作品作成' : '作品編集'}</h1>
                 <div>
                     <button onClick={handleSave} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-2">
                         保存
                     </button>
-                    <button onClick={handlePublishToggle} className={`${isPublished ? 'bg-red-500 hover:bg-red-700' : 'bg-yellow-500 hover:bg-yellow-700'} text-white font-bold py-2 px-4 rounded`}>
-                        {isPublished ? '出品停止中' : '出品中'}
-                    </button>
+                    {!isNewContent && (
+                        <button onClick={handlePublishToggle} className={`${isPublished ? 'bg-red-500 hover:bg-red-700' : 'bg-yellow-500 hover:bg-yellow-700'} text-white font-bold py-2 px-4 rounded`}>
+                            {isPublished ? '出品停止中' : '出品中'}
+                        </button>
+                    )}
                 </div>
             </header>
             <main className="p-4">

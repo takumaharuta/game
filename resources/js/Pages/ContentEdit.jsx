@@ -42,20 +42,19 @@ const ContentEdit = () => {
         const parts = currentPageId.split('-');
         const mainNumber = parseInt(parts[0]);
         const nextMainNumber = mainNumber + 1;
+
         return parts.length > 1 
             ? `${nextMainNumber}-${parts.slice(1).join('-')}` 
             : `${nextMainNumber}`;
     };
-
     const onDrop = useCallback(async (acceptedFiles, pageId) => {
         if (!mounted || !pageId) return;
-
         const file = acceptedFiles[0];
         if (file) {
             try {
                 const resizedImage = await resizeImage(file);
                 setContent(prevContent => {
-                    const newPages = prevContent.pages.map(page => 
+                    const newPages = prevContent.pages.map(page =>
                         page.id === pageId ? { ...page, images: [resizedImage], choices: [] } : page
                     );
                     const nextPageId = getNextPageId(pageId);
@@ -90,10 +89,12 @@ const ContentEdit = () => {
             return;
         }
 
+
         setContent(prevContent => {
             const newPages = [...prevContent.pages];
             const currentPageIndex = newPages.findIndex(page => page.id === editingPage);
             const currentPage = { ...newPages[currentPageIndex] };
+
             
             const nextMainNumber = parseInt(currentPage.id.split('-')[0]) + 1;
             const newChoices = validChoices.map((choice, index) => ({
@@ -117,6 +118,7 @@ const ContentEdit = () => {
                 }
             });
 
+
             return { ...prevContent, pages: newPages };
         });
 
@@ -125,7 +127,6 @@ const ContentEdit = () => {
         setChoiceInputs([]);
         setChoiceFlavor('default');
     };
-
     const saveContent = async () => {
         try {
             await axios.post('/api/contents', { ...content, scrollType });

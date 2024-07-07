@@ -15,4 +15,9 @@ class Content extends Model
     {
         return $this->hasMany(Page::class);
     }
+    
+    public function contentPage()
+    {
+        return $this->hasOne(ContentPage::class);
+    }
 }
