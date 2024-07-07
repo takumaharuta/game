@@ -39,9 +39,10 @@ Route::middleware('auth')->group(function () {
     // Content routes
     Route::get('/content/edit/{id?}', [ContentController::class, 'edit'])->name('content.edit');
     Route::get('/content/preview/{id}', [ContentController::class, 'preview'])->name('content.preview');
-    Route::get('/content-page/{id}', [ContentController::class, 'showContentPage'])->name('content.page');
-    Route::get('/content-page/edit/{id?}', [\App\Http\Controllers\ContentController::class, 'editContentPage'])
-        ->name('content.page.edit');
+    
+    // ContentPage routes - 順序を変更
+    Route::get('/content-page/edit/{id?}', [ContentController::class, 'editContentPage'])->name('content-page.edit');
+    Route::get('/content-page/create', [ContentController::class, 'createContentPage'])->name('content-page.create');
+    Route::get('/content-page/{id}', [ContentController::class, 'showContentPage'])->name('content-page.show');
 });
-
 require __DIR__.'/auth.php';

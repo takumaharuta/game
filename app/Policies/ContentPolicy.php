@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\Content;
+use App\Models\ContentPage;
 
 class ContentPolicy
 {
@@ -13,9 +14,17 @@ class ContentPolicy
         return $user->creator()->exists();
     }
 
-    public function update(User $user, Content $content)
+    public function update(User $user, $content)
     {
-        // 作者のみが更新可能
-        return $user->id === $content->user_id;
+        // $content が Content モデルか ContentPage モデルかをチェック
+        if ($content instanceof Content) {
+            return $user->id === $content->user_id;
+        } elseif ($content instanceof ContentPage) {
+            // ContentPage の所有者を確認
+            // ここでは ContentPage が Content に属していると仮定しています
+            return $user->id === $content->content->user_id;
+        }
+
+        return false;
     }
 }
