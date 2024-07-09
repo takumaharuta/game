@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Content;
+use App\Models\ContentPage;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -58,11 +59,7 @@ class ContentController extends Controller
             $contentPage = new ContentPage();
             $this->authorize('create', ContentPage::class);
         }
-    
-        return Inertia::render('ContentPageEdit', [
-            'contentPage' => $contentPage,
-            'isNewContentPage' => $id === null
-        ]);
+        return Inertia::render('ContentPageEdit', ['contentPage' => $contentPage]);
     }
 
     public function preview($id)
@@ -75,6 +72,70 @@ class ContentController extends Controller
     {
         $content = Content::with('pages.choices')->findOrFail($id);
         return Inertia::render('ContentPage', ['content' => $content]);
+    }
+    
+    // ContentPage 関連の新しいメソッド
+    public function storeContentPage(Request $request)
+    {
+        $this->authorize('create', ContentPage::class);
+
+        $validatedData = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0|max:100',
+            'tags' => 'nullable|json',
+            'is_published' => 'boolean',
+            'cover_image' => 'nullable|image|max:2048',
+        ]);
+
+        $contentPage = new ContentPage($validatedData);
+        $contentPage->user_id = Auth::id();
+
+        if ($request->hasFile('cover_image')) {
+            $path = $request->file('cover_image')->store('cover_images', 'public');
+            $contentPage->cover_image = $path;
+        }
+
+        $contentPage->save();
+
+        return response()->json($contentPage, 201);
+    }
+
+    public function updateContentPage(Request $request, $id)
+    {
+        $contentPage = ContentPage::findOrFail($id);
+        $this->authorize('update', $contentPage);
+
+        $validatedData = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'sometimes|required|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0|max:100',
+            'tags' => 'nullable|json',
+            'is_published' => 'boolean',
+            'cover_image' => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('cover_image')) {
+            $path = $request->file('cover_image')->store('cover_images', 'public');
+            $validatedData['cover_image'] = $path;
+        }
+
+        $contentPage->update($validatedData);
+
+        return response()->json($contentPage);
+    }
+
+    public function togglePublishContentPage($id)
+    {
+        $contentPage = ContentPage::findOrFail($id);
+        $this->authorize('update', $contentPage);
+
+        $contentPage->is_published = !$contentPage->is_published;
+        $contentPage->save();
+
+        return response()->json(['is_published' => $contentPage->is_published]);
     }
 
 }
