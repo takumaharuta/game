@@ -16,8 +16,8 @@ class Content extends Model
         return $this->hasMany(Page::class);
     }
     
-    public function contentPage()
+    public function contentPages()
     {
-        return $this->hasOne(ContentPage::class);
+        return $this->hasMany(ContentPage::class, 'content_id', 'id');
     }
 }
