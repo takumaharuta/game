@@ -1,36 +1,21 @@
 <?php
-
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ContentController;
+use App\Http\Controllers\ContentPageController;
+use App\Http\Controllers\TopPageController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
-
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
-
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// トップページ（認証不要）
+Route::get('/', [TopPageController::class, 'index'])->name('top');
 
 Route::middleware('auth')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', function () {
+        return Inertia::render('Dashboard');
+    })->name('dashboard');
+
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -40,9 +25,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/content/edit/{id?}', [ContentController::class, 'edit'])->name('content.edit');
     Route::get('/content/preview/{id}', [ContentController::class, 'preview'])->name('content.preview');
     
-    // ContentPage routes - 順序を変更
-    Route::get('/content-page/edit/{id?}', [ContentController::class, 'editContentPage'])->name('content-page.edit');
-    Route::get('/content-page/create', [ContentController::class, 'createContentPage'])->name('content-page.create');
-    Route::get('/content-page/{id}', [ContentController::class, 'showContentPage'])->name('content-page.show');
+    // ContentPage routes
+    Route::get('/content-page', [ContentPageController::class, 'create'])->name('content-page.create');
+    Route::post('/content-page', [ContentPageController::class, 'store'])->name('content-page.store');
+    Route::get('/content-page/edit/{id?}', [ContentPageController::class, 'edit'])->name('content-page.edit');
+    Route::get('/content-page/preview/{id}', [ContentPageController::class, 'preview'])->name('content-page.preview');
+    Route::post('/content-page/{id}', [ContentPageController::class, 'update'])->name('content-page.update');
+    Route::put('/content-page/{id}', [ContentPageController::class, 'publish'])->name('content-page.publish');
 });
+
+// コンテンツページの表示（認証不要）
+Route::get('/content-page/{id}', [ContentPageController::class, 'show'])->name('content-page.show');
+
 require __DIR__.'/auth.php';

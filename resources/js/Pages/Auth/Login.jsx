@@ -1,41 +1,43 @@
-import { useEffect } from 'react';
-import Checkbox from '@/Components/Checkbox';
-import GuestLayout from '@/Layouts/GuestLayout';
-import InputError from '@/Components/InputError';
+import React from 'react';
+import { useForm, Head, Link } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import { Head, Link, useForm } from '@inertiajs/react';
+import Checkbox from '@/Components/Checkbox';
+import PrimaryButton from '@/Components/PrimaryButton';
 
 export default function Login({ status, canResetPassword }) {
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         email: '',
         password: '',
         remember: false,
     });
 
-    useEffect(() => {
-        return () => {
-            reset('password');
-        };
-    }, []);
-
     const submit = (e) => {
         e.preventDefault();
-
-        post(route('login'));
+        post('/login');
     };
 
     return (
-        <GuestLayout>
+        <>
             <Head title="Log in" />
 
             {status && <div className="mb-4 font-medium text-sm text-green-600">{status}</div>}
 
+            {/* エラーメッセージの表示 */}
+            {Object.keys(errors).length > 0 && (
+                <div className="mb-4">
+                    <div className="font-medium text-red-600">Whoops! Something went wrong.</div>
+                    <ul className="mt-3 list-disc list-inside text-sm text-red-600">
+                        {Object.keys(errors).map(function (key, index) {
+                            return <li key={index}>{errors[key]}</li>;
+                        })}
+                    </ul>
+                </div>
+            )}
+
             <form onSubmit={submit}>
                 <div>
                     <InputLabel htmlFor="email" value="Email" />
-
                     <TextInput
                         id="email"
                         type="email"
@@ -46,13 +48,10 @@ export default function Login({ status, canResetPassword }) {
                         isFocused={true}
                         onChange={(e) => setData('email', e.target.value)}
                     />
-
-                    <InputError message={errors.email} className="mt-2" />
                 </div>
 
                 <div className="mt-4">
                     <InputLabel htmlFor="password" value="Password" />
-
                     <TextInput
                         id="password"
                         type="password"
@@ -62,8 +61,6 @@ export default function Login({ status, canResetPassword }) {
                         autoComplete="current-password"
                         onChange={(e) => setData('password', e.target.value)}
                     />
-
-                    <InputError message={errors.password} className="mt-2" />
                 </div>
 
                 <div className="block mt-4">
@@ -73,25 +70,38 @@ export default function Login({ status, canResetPassword }) {
                             checked={data.remember}
                             onChange={(e) => setData('remember', e.target.checked)}
                         />
-                        <span className="ms-2 text-sm text-gray-600">Remember me</span>
+                        <span className="ml-2 text-sm text-gray-600">Remember me</span>
                     </label>
                 </div>
 
                 <div className="flex items-center justify-end mt-4">
                     {canResetPassword && (
                         <Link
-                            href={route('password.request')}
-                            className="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            href="/forgot-password"
+                            className="underline text-sm text-gray-600 hover:text-gray-900"
                         >
                             Forgot your password?
                         </Link>
                     )}
 
-                    <PrimaryButton className="ms-4" disabled={processing}>
+                    <PrimaryButton className="ml-4" disabled={processing}>
                         Log in
                     </PrimaryButton>
                 </div>
             </form>
-        </GuestLayout>
+
+            <div className="text-center mt-4">
+                <p className="text-sm text-gray-600">
+                    まだアカウントをお持ちでない方は
+                    <Link
+                        href="/register"
+                        className="font-medium text-indigo-600 hover:text-indigo-500 ml-1"
+                    >
+                        こちら
+                    </Link>
+                    から登録できます。
+                </p>
+            </div>
+        </>
     );
 }

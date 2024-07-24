@@ -1,28 +1,28 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import { useDropzone } from 'react-dropzone';
+import { Inertia } from '@inertiajs/inertia';
 
-const ContentPageEdit = ({ contentPage: initialContentPage = {}, content: initialContent = {} }) => {
+const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
     const [contentPage, setContentPage] = useState({
         title: '',
         description: '',
-        price: '',
-        discount: '',
+        display_price: 1000,
+        discount_percentage: 0,
         tags: [],
-        is_published: false,
         cover_image: null,
         ...initialContentPage
     });
-    const [content, setContent] = useState({
-        scroll_type: 'default',
-        ...initialContent
-    });
-    const [isSaved, setIsSaved] = useState(false);
-    const [editMode, setEditMode] = useState(null);
     const [mounted, setMounted] = useState(false);
+    const [tagSuggestions, setTagSuggestions] = useState([]);
+    const [existingTags, setExistingTags] = useState([]);
+    const [tagInput, setTagInput] = useState('');
+    const [priceError, setPriceError] = useState('');
+    const [isPreviewMode, setIsPreviewMode] = useState(false);
 
     useEffect(() => {
         setMounted(true);
+        fetchExistingTags();
     }, []);
 
     useEffect(() => {
@@ -30,11 +30,16 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {}, content: initia
             ...prev,
             ...initialContentPage
         }));
-        setContent(prev => ({
-            ...prev,
-            ...initialContent
-        }));
-    }, [initialContentPage, initialContent]);
+    }, [initialContentPage]);
+
+    const fetchExistingTags = async () => {
+        try {
+            const response = await axios.get('/api/tags');
+            setExistingTags(response.data);
+        } catch (error) {
+            console.error('Error fetching existing tags:', error);
+        }
+    };
 
     const resizeImage = useCallback((file) => {
         return new Promise((resolve) => {
@@ -60,15 +65,13 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {}, content: initia
         if (!mounted) return;
         const file = acceptedFiles[0];
         if (file) {
-            try {
-                const resizedImage = await resizeImage(file);
-                setContentPage(prev => ({ ...prev, cover_image: resizedImage }));
-                setEditMode(null);
-            } catch (error) {
-                console.error('Error resizing image:', error);
-            }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setContentPage(prev => ({ ...prev, cover_image: reader.result }));
+            };
+            reader.readAsDataURL(file);
         }
-    }, [mounted, resizeImage]);
+    }, [mounted]); //修正１
 
     const { getRootProps, getInputProps } = useDropzone({
         onDrop,
@@ -77,21 +80,52 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {}, content: initia
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setContentPage(prev => ({ ...prev, [name]: value }));
+        if (name === 'display_price') {
+            const numValue = parseInt(value);
+            if (isNaN(numValue) || numValue <= 0 || !Number.isInteger(numValue)) {
+                setPriceError('価格は正の整数で入力してください');
+            } else {
+                setPriceError('');
+                setContentPage(prev => ({ ...prev, [name]: numValue }));
+            }
+        } else {
+            setContentPage(prev => ({ ...prev, [name]: value }));
+        }
     };
 
-    const handleContentInputChange = (e) => {
-        const { name, value } = e.target;
-        setContent(prev => ({ ...prev, [name]: value }));
+    const handleTagInputChange = (e) => {
+        const input = e.target.value;
+        setTagInput(input);
+
+        if (input.trim()) {
+            const suggestions = existingTags.filter(tag => 
+                tag.name.toLowerCase().includes(input.toLowerCase())
+            );
+            setTagSuggestions(suggestions);
+        } else {
+            setTagSuggestions([]);
+        }
+    };
+
+    const handleTagSelect = (selectedTag) => {
+        if (!contentPage.tags.includes(selectedTag.name)) {
+            setContentPage(prev => ({
+                ...prev,
+                tags: [...prev.tags, selectedTag.name]
+            }));
+        }
+        setTagInput('');
+        setTagSuggestions([]);
     };
 
     const handleTagInput = (e) => {
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault();
-            const tag = e.target.value.trim();
+            const tag = tagInput.trim();
             if (tag && !contentPage.tags.includes(tag)) {
                 setContentPage(prev => ({ ...prev, tags: [...prev.tags, tag] }));
-                e.target.value = '';
+                setTagInput('');
+                setTagSuggestions([]);
             }
         }
     };
@@ -102,20 +136,18 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {}, content: initia
             tags: prev.tags.filter(tag => tag !== tagToRemove)
         }));
     };
-
-    const saveContentPage = async () => {
-        try {
-            const response = await axios.post('/api/content-page', { ...contentPage, ...content });
-            setIsSaved(true);
-            console.log('Content page saved:', response.data);
-        } catch (error) {
-            console.error('Error saving content page:', error);
-            // ここでエラーメッセージを表示するなどのエラーハンドリングを行う
-        }
+    
+    const saveContentPage = () => {
+        Inertia.post('/content-page', contentPage, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
-    const handleEdit = (mode) => {
-        setEditMode(mode);
+    const calculateDisplayPrice = () => {
+        const price = contentPage.price;
+        const discount = contentPage.discount;
+        return Math.round(price * (100 - discount) / 100);
     };
 
     if (!mounted) {
@@ -125,64 +157,126 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {}, content: initia
     return (
         <div className="content-page-edit">
             <header className="flex justify-between items-center p-4 bg-blue-500 text-white">
-                <h1 className="text-2xl font-bold">コンテンツページ編集</h1>
+                <h1 className="text-2xl font-bold">Gamebook</h1>
                 <div>
                     <button onClick={saveContentPage} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-2">
                         保存
                     </button>
-                    {!isSaved && (
-                        <button onClick={() => setIsSaved(true)} className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
-                            プレビュー
-                        </button>
-                    )}
                 </div>
             </header>
             <main className="p-4">
-                <div className="mb-4 p-4 border rounded shadow-md relative w-full flex flex-col">
-                    <h2 className="text-xl font-bold mb-2">コンテンツ情報</h2>
-                    <input
-                        type="text"
-                        name="title"
-                        value={contentPage.title}
-                        onChange={handleInputChange}
-                        placeholder="タイトル"
-                        className="w-full text-2xl font-bold mb-4 p-2 border rounded"
-                    />
-                    <div className="flex mb-4">
-                        <div {...getRootProps()} className="w-1/2 border-2 border-dashed border-gray-300 rounded p-4 flex items-center justify-center">
-                            <input {...getInputProps()} />
+                {isPreviewMode ? (
+                    <div className="flex">
+                        <div className="w-4/5 pr-4">
                             {contentPage.cover_image ? (
-                                <img src={contentPage.cover_image} alt="カバー画像" className="max-w-full max-h-64" />
+                                <img 
+                                    src={contentPage.cover_image.startsWith('data:') ? contentPage.cover_image : `/storage/${contentPage.cover_image}`} 
+                                    alt="カバー画像" 
+                                    className="max-w-full max-h-64" 
+                                />
                             ) : (
                                 <p>カバー画像をドラッグ＆ドロップまたはクリックして選択</p>
                             )}
                         </div>
-                        <div className="w-1/2 ml-4 border p-4">
-                            <input
-                                type="number"
-                                name="discount"
-                                value={contentPage.discount}
-                                onChange={handleInputChange}
-                                placeholder="割引率"
-                                className="w-full mb-2 p-2 border rounded"
-                            />
-                            <input
-                                type="number"
-                                name="price"
-                                value={contentPage.price}
-                                onChange={handleInputChange}
-                                placeholder="価格"
-                                className="w-full p-2 border rounded"
-                            />
+                        <div className="w-1/5 bg-gray-100 p-4 rounded">
+                            <h2 className="text-2xl font-bold mb-4">{contentPage.title}</h2>
+                            {contentPage.discount > 0 && (
+                                <div className="bg-red-500 text-white font-bold py-2 px-4 rounded inline-block mb-2">
+                                    {contentPage.discount}% OFF
+                                </div>
+                            )}
+                            {contentPage.discount > 0 ? (
+                                <>
+                                    <p className="text-gray-500 line-through">参考価格: {contentPage.price}円</p>
+                                    <p className="text-xl font-bold">{calculateDisplayPrice()}円</p>
+                                </>
+                            ) : (
+                                <p className="text-xl font-bold">{contentPage.price}円</p>
+                            )}
                         </div>
                     </div>
-                    <div className="mb-4">
+                ) : (
+                    <div className="mb-4 p-4 border rounded shadow-md relative w-full flex flex-col">
+                        <h2 className="text-xl font-bold mb-2">コンテンツ情報</h2>
                         <input
                             type="text"
-                            placeholder="タグを入力（Enterで追加）"
-                            onKeyDown={handleTagInput}
-                            className="w-full p-2 border rounded"
+                            name="title"
+                            value={contentPage.title}
+                            onChange={handleInputChange}
+                            placeholder="タイトル"
+                            className="w-full text-2xl font-bold mb-4 p-2 border rounded"
                         />
+                        <div className="flex mb-4">
+                            <div {...getRootProps()} className="w-1/2 border-2 border-dashed border-gray-300 rounded p-4 flex items-center justify-center">
+                                <input {...getInputProps()} />
+                                {contentPage.cover_image ? (
+                                    <img 
+                                        src={contentPage.cover_image.startsWith('data:') 
+                                            ? contentPage.cover_image 
+                                            : contentPage.cover_image.startsWith('http') 
+                                                ? contentPage.cover_image 
+                                                : `/storage/${contentPage.cover_image}`} 
+                                        alt="カバー画像" 
+                                        className="max-w-full max-h-64" 
+                                    />
+                                ) : (
+                                    <p>カバー画像をドラッグ＆ドロップまたはクリックして選択</p>
+                                )}
+                            </div>
+                            <div className="w-1/2 ml-4 border p-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="discount_percentage">
+                                    割引率
+                                </label>
+                                <select
+                                    id="discount_percentage"
+                                    name="discount_percentage"
+                                    value={contentPage.discount_percentage}
+                                    onChange={handleInputChange}
+                                    className="w-full mb-2 p-2 border rounded"
+                                >
+                                    {[...Array(20)].map((_, i) => (
+                                        <option key={i} value={i * 5}>{i * 5}%</option>
+                                    ))}
+                                </select>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="display_price">
+                                    価格
+                                </label>
+                                <input
+                                    type="number"
+                                    id="display_price"
+                                    name="display_price"
+                                    value={contentPage.display_price}
+                                    onChange={handleInputChange}
+                                    className={`w-full p-2 border rounded ${priceError ? 'border-red-500' : ''}`}
+                                />
+                                {priceError && <p className="text-red-500 text-sm">{priceError}</p>}
+                                <p className="mt-2">表示単価: {calculateDisplayPrice()}円</p>
+                            </div>
+                        </div>
+                        <div className="mb-4 relative">
+                            <input
+                                type="text"
+                                value={tagInput}
+                                onChange={handleTagInputChange}
+                                onKeyDown={handleTagInput}
+                                placeholder="タグを入力（Enterで追加）"
+                                className="w-full p-2 border rounded"
+                            />
+                            {tagSuggestions.length > 0 && (
+                                <div className="absolute z-10 w-full bg-white border rounded mt-1">
+                                    {tagSuggestions.map((tag, index) => (
+                                        <div 
+                                            key={index} 
+                                            className="p-2 hover:bg-gray-100 cursor-pointer"
+                                            onClick={() => handleTagSelect(tag)}
+                                        >
+                                            <span>{tag.name}</span>
+                                            <span className="ml-2 text-sm text-gray-500">({tag.count})</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                         <div className="flex flex-wrap mt-2">
                             {contentPage.tags && contentPage.tags.map((tag, index) => (
                                 <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2 mb-2">
@@ -191,60 +285,32 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {}, content: initia
                                 </span>
                             ))}
                         </div>
+                        <textarea
+                            name="description"
+                            value={contentPage.description}
+                            onChange={handleInputChange}
+                            placeholder="説明"
+                            className="w-full h-32 p-2 border rounded"
+                        />
                     </div>
-                    <textarea
-                        name="description"
-                        value={contentPage.description}
-                        onChange={handleInputChange}
-                        placeholder="説明"
-                        className="w-full h-32 p-2 border rounded"
-                    />
+                )}
+                {isPreviewMode && (
                     <div className="mt-4">
-                        <label className="flex items-center">
-                            <input
-                                type="checkbox"
-                                name="is_published"
-                                checked={contentPage.is_published}
-                                onChange={(e) => setContentPage(prev => ({ ...prev, is_published: e.target.checked }))}
-                                className="form-checkbox h-5 w-5 text-blue-600"
-                            />
-                            <span className="ml-2 text-gray-700">公開する</span>
-                        </label>
-                    </div>
-                    <div className="mt-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="scroll_type">
-                            スクロールタイプ
-                        </label>
-                        <select
-                            id="scroll_type"
-                            name="scroll_type"
-                            value={content.scroll_type}
-                            onChange={handleContentInputChange}
-                            className="w-full p-2 border rounded"
-                        >
-                            <option value="default">デフォルト</option>
-                            <option value="horizontal">横スクロール</option>
-                            <option value="vertical">縦スクロール</option>
-                        </select>
-                    </div>
-                </div>
-            </main>
-            {editMode && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-4 rounded max-w-lg w-full">
-                        <h2 className="text-xl font-bold mb-4">{editMode === 'image' ? '画像' : 'コンテンツ情報'}を編集</h2>
-                        {/* 編集モードの内容をここに追加 */}
-                        <div className="flex justify-end space-x-2">
-                            <button onClick={() => setEditMode(null)} className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                                キャンセル
-                            </button>
-                            <button onClick={() => setEditMode(null)} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                保存
-                            </button>
+                        <h3 className="text-xl font-bold mb-2">説明</h3>
+                        <p>{contentPage.description}</p>
+                        <div className="mt-4">
+                            <h3 className="text-xl font-bold mb-2">タグ</h3>
+                            <div className="flex flex-wrap">
+                                {contentPage.tags.map((tag, index) => (
+                                    <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2 mb-2">
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </main>
         </div>
     );
 };
