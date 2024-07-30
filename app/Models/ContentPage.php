@@ -9,17 +9,16 @@ class ContentPage extends Model
     use HasFactory;
 
     protected $fillable = [
-        'content_id', 'title', 'description', 'tags', 'display_price', 'discount_percentage', 'is_published', 'cover_image', 'purchase_count'
+        'content_id', 'title', 'description', 'display_price', 'discount_percentage', 'is_published', 'cover_image', 'purchase_count'
     ];
 
     protected $casts = [
-        'tags' => 'array',
         'is_published' => 'boolean',
         'display_price' => 'integer',
         'discount_percentage' => 'integer',
         'purchase_count' => 'integer',
     ];
-
+    
     protected $appends = ['scroll_type', 'creator_id', 'average_rating'];
 
     public function content()
@@ -36,15 +35,20 @@ class ContentPage extends Model
     {
         return $this->content?->creator_id;
     }
-
-    public function setTagsAttribute($value)
+    
+    public function tags()
     {
-        $this->attributes['tags'] = json_encode($value);
+        return $this->belongsToMany(Tag::class, 'content_page_tag');
     }
-
+    
+    // タグ属性のアクセサを追加
     public function getTagsAttribute($value)
     {
-        return json_decode($value, true) ?? [];
+        // タグが文字列として保存されている場合の対応
+        if (is_string($value)) {
+            return json_decode($value, true) ?? [];
+        }
+        return $value;
     }
 
     public function getCoverImageAttribute($value)

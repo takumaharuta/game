@@ -11,7 +11,10 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
         discount_percentage: 0,
         tags: [],
         cover_image: null,
-        ...initialContentPage
+        ...initialContentPage,
+        tags: Array.isArray(initialContentPage.tags) 
+            ? initialContentPage.tags.map(tag => typeof tag === 'string' ? { name: tag } : tag)
+            : []
     });
     const [mounted, setMounted] = useState(false);
     const [tagSuggestions, setTagSuggestions] = useState([]);
@@ -28,7 +31,10 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
     useEffect(() => {
         setContentPage(prev => ({
             ...prev,
-            ...initialContentPage
+            ...initialContentPage,
+            tags: Array.isArray(initialContentPage.tags)
+                ? initialContentPage.tags.map(tag => typeof tag === 'string' ? { name: tag } : tag)
+                : []
         }));
     }, [initialContentPage]);
 
@@ -71,7 +77,7 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
             };
             reader.readAsDataURL(file);
         }
-    }, [mounted]); //修正１
+    }, [mounted]);
 
     const { getRootProps, getInputProps } = useDropzone({
         onDrop,
@@ -108,10 +114,10 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
     };
 
     const handleTagSelect = (selectedTag) => {
-        if (!contentPage.tags.includes(selectedTag.name)) {
+        if (!contentPage.tags.some(tag => tag.name === selectedTag.name)) {
             setContentPage(prev => ({
                 ...prev,
-                tags: [...prev.tags, selectedTag.name]
+                tags: [...prev.tags, { name: selectedTag.name }]
             }));
         }
         setTagInput('');
@@ -121,32 +127,39 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
     const handleTagInput = (e) => {
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault();
-            const tag = tagInput.trim();
-            if (tag && !contentPage.tags.includes(tag)) {
-                setContentPage(prev => ({ ...prev, tags: [...prev.tags, tag] }));
+            const tagName = tagInput.trim();
+            if (tagName && !contentPage.tags.some(tag => tag.name === tagName)) {
+                setContentPage(prev => ({ 
+                    ...prev, 
+                    tags: [...prev.tags, { name: tagName }] 
+                }));
                 setTagInput('');
                 setTagSuggestions([]);
             }
         }
     };
 
-    const removeTag = (tagToRemove) => {
+    const removeTag = (tagNameToRemove) => {
         setContentPage(prev => ({
             ...prev,
-            tags: prev.tags.filter(tag => tag !== tagToRemove)
+            tags: prev.tags.filter(tag => tag.name !== tagNameToRemove)
         }));
     };
     
     const saveContentPage = () => {
-        Inertia.post('/content-page', contentPage, {
+        const formData = {
+            ...contentPage,
+            tags: contentPage.tags.map(tag => tag.name)
+        };
+        Inertia.post('/content-page', formData, {
             preserveState: true,
             preserveScroll: true,
         });
     };
 
     const calculateDisplayPrice = () => {
-        const price = contentPage.price;
-        const discount = contentPage.discount;
+        const price = contentPage.display_price;
+        const discount = contentPage.discount_percentage;
         return Math.round(price * (100 - discount) / 100);
     };
 
@@ -180,18 +193,18 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
                         </div>
                         <div className="w-1/5 bg-gray-100 p-4 rounded">
                             <h2 className="text-2xl font-bold mb-4">{contentPage.title}</h2>
-                            {contentPage.discount > 0 && (
+                            {contentPage.discount_percentage > 0 && (
                                 <div className="bg-red-500 text-white font-bold py-2 px-4 rounded inline-block mb-2">
-                                    {contentPage.discount}% OFF
+                                    {contentPage.discount_percentage}% OFF
                                 </div>
                             )}
-                            {contentPage.discount > 0 ? (
+                            {contentPage.discount_percentage > 0 ? (
                                 <>
-                                    <p className="text-gray-500 line-through">参考価格: {contentPage.price}円</p>
+                                    <p className="text-gray-500 line-through">参考価格: {contentPage.display_price}円</p>
                                     <p className="text-xl font-bold">{calculateDisplayPrice()}円</p>
                                 </>
                             ) : (
-                                <p className="text-xl font-bold">{contentPage.price}円</p>
+                                <p className="text-xl font-bold">{contentPage.display_price}円</p>
                             )}
                         </div>
                     </div>
@@ -278,10 +291,10 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
                             )}
                         </div>
                         <div className="flex flex-wrap mt-2">
-                            {contentPage.tags && contentPage.tags.map((tag, index) => (
+                            {contentPage.tags.map((tag, index) => (
                                 <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2 mb-2">
-                                    {tag}
-                                    <button onClick={() => removeTag(tag)} className="ml-2 text-red-500">&times;</button>
+                                    {tag.name}
+                                    <button onClick={() => removeTag(tag.name)} className="ml-2 text-red-500">&times;</button>
                                 </span>
                             ))}
                         </div>
@@ -303,7 +316,7 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
                             <div className="flex flex-wrap">
                                 {contentPage.tags.map((tag, index) => (
                                     <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2 mb-2">
-                                        {tag}
+                                        {tag.name}
                                     </span>
                                 ))}
                             </div>

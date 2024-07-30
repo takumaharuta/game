@@ -16,14 +16,14 @@ const ContentPagePreview = () => {
     };
     
     const handlePublish = () => {
-    Inertia.put(`/content-page/${contentPage.id}`, {}, {
-        preserveState: false,
-        preserveScroll: false,
-        onSuccess: () => {
-            Inertia.visit(`/content-page/${contentPage.id}`);
-        },
-    });
-};
+        Inertia.put(`/content-page/${contentPage.id}`, {}, {
+            preserveState: false,
+            preserveScroll: false,
+            onSuccess: () => {
+                Inertia.visit(`/content-page/${contentPage.id}`);
+            },
+        });
+    };
     
     return (
         <div className="content-page-preview">
@@ -75,10 +75,10 @@ const ContentPagePreview = () => {
                 <div className="p-4 border rounded shadow-md">
                     <h3 className="text-xl font-bold mb-2">タグ</h3>
                     <div className="flex flex-wrap">
-                        {contentPage.tags && contentPage.tags.length > 0 ? (
+                        {Array.isArray(contentPage.tags) && contentPage.tags.length > 0 ? (
                             contentPage.tags.map((tag, index) => (
                                 <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2 mb-2">
-                                    {tag}
+                                    {typeof tag === 'string' ? tag : tag.name}
                                 </span>
                             ))
                         ) : (

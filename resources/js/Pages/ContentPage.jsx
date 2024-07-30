@@ -87,7 +87,7 @@ const ContentPage = () => {
                 </div>
                 <div className="mb-4 border p-4 rounded">
                     {contentPage.tags && contentPage.tags.map((tag, index) => (
-                        <span key={index} className="bg-gray-200 px-2 py-1 rounded mr-2">{tag}</span>
+                        <span key={index} className="bg-gray-200 px-2 py-1 rounded mr-2">{tag.name}</span>
                     ))}
                 </div>
                 <div className="mb-4 border p-4 rounded">
