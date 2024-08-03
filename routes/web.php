@@ -3,6 +3,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\ContentPageController;
 use App\Http\Controllers\TopPageController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -32,6 +33,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/content-page/preview/{id}', [ContentPageController::class, 'preview'])->name('content-page.preview');
     Route::post('/content-page/{id}', [ContentPageController::class, 'update'])->name('content-page.update');
     Route::put('/content-page/{id}', [ContentPageController::class, 'publish'])->name('content-page.publish');
+    
+    // Payment routes
+    Route::get('/payment', [PaymentController::class, 'create'])->name('payment.create');
+    Route::post('/api/payment', [PaymentController::class, 'store'])->name('payment.store');
 });
 
 // コンテンツページの表示（認証不要）
