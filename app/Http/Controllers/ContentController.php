@@ -137,5 +137,18 @@ class ContentController extends Controller
 
         return response()->json(['is_published' => $contentPage->is_published]);
     }
+    
+    public function getPrice($id)
+    {
+        try {
+            $content = Content::findOrFail($id);
+            dd($content);
+            return response()->json(['price' => $content->display_price]);
+        } catch (\Exception $e) {
+            dd($content);
+            Log::error('価格取得エラー: ' . $e->getMessage());
+            return response()->json(['error' => '価格の取得に失敗しました'], 500);
+        }
+    }
 
 }

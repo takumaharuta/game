@@ -9,7 +9,15 @@ class Content extends Model
 {
     use HasFactory;
     
-    protected $fillable = ['title', 'scroll_type', 'creator_id'];
+    protected $fillable = ['title', 
+        'title',
+        'description',
+        'display_price',
+        'original_price',
+        'scroll_type',
+        'creator_id',
+        'discount_percentage'
+        ];
 
     public function pages()
     {

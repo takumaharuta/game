@@ -10,6 +10,7 @@ use Inertia\Response;
 use Stripe\Stripe;
 use Stripe\Charge;
 use Illuminate\Support\Facades\Log;
+use App\Models\ContentPage;
 
 class PaymentController extends Controller
 {
@@ -23,9 +24,12 @@ class PaymentController extends Controller
     /**
      * 決済フォーム表示
      */
-    public function create(): Response
+    public function create($id)
     {
-        return Inertia::render('StripePaymentForm');
+        $content = ContentPage::findOrFail($id);
+        return Inertia::render('StripePaymentForm', [
+            'contentId' => $content
+        ]);
     }
 
     /**

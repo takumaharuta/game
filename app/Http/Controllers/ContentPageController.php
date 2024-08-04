@@ -146,9 +146,9 @@ class ContentPageController extends Controller
     public function publish($id)
     {
         $contentPage = ContentPage::findOrFail($id);
-        $contentPage->is_published = true;
+        $contentPage->is_published = 1;
         $contentPage->save();
-        return Inertia::location("/content-page/{$id}");
+        return redirect("/content-page/{$id}");
     }
     
     public function show($id)
@@ -160,5 +160,11 @@ class ContentPageController extends Controller
             'contentPage' => $contentPage,
             'isCreator' => $isCreator,
         ]);
+    }
+    
+    public function getPrice($id)
+    {
+        $content = Content::findOrFail($id);
+        return response()->json(['price' => $content->display_price]);
     }
 }
