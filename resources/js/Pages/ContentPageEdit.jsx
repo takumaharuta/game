@@ -87,9 +87,9 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         if (name === 'display_price') {
-            const numValue = parseInt(value);
-            if (isNaN(numValue) || numValue <= 0 || !Number.isInteger(numValue)) {
-                setPriceError('価格は正の整数で入力してください');
+            const numValue = parseInt(value, 10);
+            if (isNaN(numValue) || numValue < 0) {
+                setPriceError('価格は0以上の整数で入力してください');
             } else {
                 setPriceError('');
                 setContentPage(prev => ({ ...prev, [name]: numValue }));

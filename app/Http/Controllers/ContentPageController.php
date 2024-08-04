@@ -14,6 +14,17 @@ use Illuminate\Support\Facades\DB;
 
 class ContentPageController extends Controller
 {
+    public function create()
+    {
+        $contentPage = new ContentPage();
+        $tags = Tag::all();
+        
+        return Inertia::render('ContentPageCreate', [
+            'contentPage' => $contentPage,
+            'tags' => $tags,
+        ]);
+    }
+    
     private function uploadToCloudinary($image)
     {
         $cloudinary = new Cloudinary();
@@ -164,7 +175,13 @@ class ContentPageController extends Controller
     
     public function getPrice($id)
     {
-        $content = Content::findOrFail($id);
-        return response()->json(['price' => $content->display_price]);
+        try {
+            $contentPage = ContentPage::findOrFail($id);
+            $price = (int) $contentPage->display_price; // 整数に変換
+            return response()->json(['price' => $price]);
+        } catch (\Exception $e) {
+            \Log::error('Error in getPrice', ['id' => $id, 'error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to retrieve price'], 500);
+        }
     }
 }

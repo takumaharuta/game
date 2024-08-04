@@ -26,10 +26,21 @@ class PaymentController extends Controller
      */
     public function create($id)
     {
-        $content = ContentPage::findOrFail($id);
-        return Inertia::render('StripePaymentForm', [
-            'contentId' => $content
-        ]);
+        try {
+            $contentPage = ContentPage::findOrFail($id);
+            \Log::info('Payment create method called', ['id' => $id, 'price' => $contentPage->display_price]);
+            
+            return Inertia::render('StripePaymentForm', [
+                'contentId' => $id,
+                'price' => $contentPage->display_price,
+                'title' => $contentPage->title
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in payment create', ['id' => $id, 'error' => $e->getMessage()]);
+            return Inertia::render('ErrorPage', [
+                'message' => 'コンテンツの取得に失敗しました。: ' . $e->getMessage()
+            ]);
+        }
     }
 
     /**
