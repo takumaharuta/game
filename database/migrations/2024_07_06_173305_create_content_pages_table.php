@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('creator_id')->nullable()->constrained('users')->onDelete('set null');
             $table->string('title');
             $table->text('description')->nullable();
-            $table->decimal('display_price', 8, 2)->nullable();
+            $table->integer('display_price', 10, 2)->nullable();
             $table->integer('discount_percentage')->nullable();
             $table->integer('purchase_count')->default(0); // 追加されたカラム
             $table->json('tags')->nullable();

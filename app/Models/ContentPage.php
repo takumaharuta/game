@@ -2,14 +2,14 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class ContentPage extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'content_id', 'title', 'description', 'display_price', 'discount_percentage', 'is_published', 'cover_image', 'purchase_count'
+        'content_id', 'creator_id', 'title', 'description', 'display_price', 
+        'discount_percentage', 'is_published', 'cover_image', 'purchase_count'
     ];
 
     protected $casts = [
@@ -17,6 +17,7 @@ class ContentPage extends Model
         'display_price' => 'integer',
         'discount_percentage' => 'integer',
         'purchase_count' => 'integer',
+        'tags' => 'array',
     ];
     
     protected $appends = ['scroll_type', 'creator_id', 'average_rating'];
@@ -41,14 +42,10 @@ class ContentPage extends Model
         return $this->belongsToMany(Tag::class, 'content_page_tag');
     }
     
-    // タグ属性のアクセサを追加
+    
     public function getTagsAttribute($value)
     {
-        // タグが文字列として保存されている場合の対応
-        if (is_string($value)) {
-            return json_decode($value, true) ?? [];
-        }
-        return $value;
+        return $value ? json_decode($value, true) : [];
     }
 
     public function getCoverImageAttribute($value)
@@ -72,6 +69,8 @@ class ContentPage extends Model
         // 実際の購入システムが実装されるまでは、ランダムな値を返す
         return rand(0, 1000);
     }
+    
+    
 
     public function toArray()
     {

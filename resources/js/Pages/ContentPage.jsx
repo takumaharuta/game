@@ -19,6 +19,10 @@ const ContentPage = () => {
     const handleEdit = () => {
         Inertia.get(`/content-page/edit/${contentPage.id}`);
     };
+    
+    const handlePurchase = () => {
+        Inertia.get(`/payment/${contentPage.id}`);
+    };
 
     const handleAddComment = () => {
         // コメント追加のモーダルを表示する処理
@@ -77,7 +81,10 @@ const ContentPage = () => {
                         {contentPage.original_price && (
                             <div className="text-lg mb-2">参考価格: <span className="text-red-500 line-through">¥{contentPage.original_price}</span></div>
                         )}
-                        <button className="bg-yellow-500 text-black font-bold py-2 px-4 rounded w-full mb-2">
+                        <button 
+                            onClick={handlePurchase}
+                            className="bg-yellow-500 text-black font-bold py-2 px-4 rounded w-full mb-2"
+                        >
                             購入する
                         </button>
                         <button className="border border-black text-black font-bold py-2 px-4 rounded w-full">
