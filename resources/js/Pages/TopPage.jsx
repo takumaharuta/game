@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { FaSearch, FaUser } from 'react-icons/fa';
+import Header from '../Components/Header'; 
 
 const ContentCard = ({ content }) => (
   <div className="flex-shrink-0 w-48 mr-4">
@@ -37,31 +38,7 @@ const TopPage = ({ recommendedContents, rankingContents, latestContents }) => {
 
   return (
     <div className="top-page">
-      <header className="flex justify-between items-center p-4 bg-blue-500 text-white">
-        <h1 className="text-2xl font-bold">GameBook</h1>
-        <div className="flex items-center">
-          <div className="relative mr-4">
-            <input
-              type="text"
-              placeholder="検索"
-              className="p-2 pr-10 rounded text-black"
-            />
-            <FaSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          </div>
-          {auth && auth.user ? (
-            <Link href="/dashboard" className="bg-gray-200 text-black font-bold py-2 px-4 rounded flex items-center">
-              <FaUser className="mr-2" />
-              マイページ
-            </Link>
-          ) : (
-            <Link href="/login" className="bg-gray-200 text-black font-bold py-2 px-4 rounded flex items-center">
-              <FaUser className="mr-2" />
-              アカウント
-            </Link>
-          )}
-        </div>
-      </header>
-
+      <Header />
       <main className="p-4">
         <div className="text-center my-12">
           <h1 className="text-6xl font-bold text-blue-600">GameBook</h1>

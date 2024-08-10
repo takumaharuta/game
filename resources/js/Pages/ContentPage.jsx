@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
 import { Inertia } from '@inertiajs/inertia';
 import { FaStar } from 'react-icons/fa';
-
+import Header from '../Components/Header'; 
 
 const calculateDisplayPrice = (price, discountPercentage) => {
     return Math.round(price * (100 - discountPercentage) / 100);
@@ -46,23 +46,7 @@ const ContentPage = () => {
     
     return (
         <div className="content-page">
-            <header className="flex justify-between items-center p-4 bg-blue-500 text-white">
-                <h1 className="text-2xl font-bold">Gamebook</h1>
-                <div>
-                    {isCreator ? (
-                        <button onClick={handleEdit} className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
-                            編集
-                        </button>
-                    ) : (
-                        <div className="flex items-center">
-                            <input type="text" placeholder="検索" className="p-2 rounded mr-2" />
-                            <button className="bg-gray-200 text-black font-bold py-2 px-4 rounded">
-                                アカウント
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </header>
+            <Header />
             <main className="p-4">
                 <h2 className="text-3xl font-bold mb-4">{contentPage.title}</h2>
                 <div className="flex mb-4">

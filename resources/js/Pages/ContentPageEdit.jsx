@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { Link } from '@inertiajs/inertia-react';  // Linkコンポーネントをインポート
 import axios from 'axios';
 import { useDropzone } from 'react-dropzone';
 import { Inertia } from '@inertiajs/inertia';
