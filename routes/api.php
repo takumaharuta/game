@@ -19,6 +19,7 @@ use App\Http\Controllers\ContentController;
 // 認証が不要なルート
 Route::get('/tags', [TagController::class, 'index']);
 Route::get('/content/{id}/price', [PaymentController::class, 'getPrice']);
+Route::get('/top-tags', [TagController::class, 'getTopTags']);
 
 // 認証が必要なルート
 Route::middleware('auth:sanctum')->group(function () {
