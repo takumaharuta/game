@@ -35,12 +35,11 @@ Route::middleware('auth')->group(function () {
     Route::put('/content-page/{id}', [ContentPageController::class, 'publish'])->name('content-page.publish');
     
     // Payment routes
-    Route::get('/payment/{id}', [PaymentController::class, 'create'])->name('payment.create');
-    Route::get('/api/content/{id}/price', [ContentPageController::class, 'getPrice']);
+    Route::get('/payment/{id}', [PaymentController::class, 'showForm'])->name('payment.form');
+    Route::post('/payment/{id}/process', [PaymentController::class, 'processPayment'])->name('payment.process');
 });
 
 // コンテンツページの表示（認証不要）
 Route::get('/content-page/{id}', [ContentPageController::class, 'show'])->name('content-page.show');
-
 
 require __DIR__.'/auth.php';
