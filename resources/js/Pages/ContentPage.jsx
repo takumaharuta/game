@@ -3,6 +3,16 @@ import { usePage } from '@inertiajs/react';
 import { Inertia } from '@inertiajs/inertia';
 import { FaStar } from 'react-icons/fa';
 
+
+const calculateDisplayPrice = (price, discountPercentage) => {
+    return Math.round(price * (100 - discountPercentage) / 100);
+};
+
+const formatPrice = (price) => {
+    return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(price);
+};
+
+
 const ContentPage = () => {
     const { contentPage, isCreator } = usePage().props;
     const [showAllComments, setShowAllComments] = useState(false);
@@ -33,7 +43,7 @@ const ContentPage = () => {
         // 自分のコメントを編集する処理
         // 実際の実装はアプリケーションの要件に応じて行う
     };
-
+    
     return (
         <div className="content-page">
             <header className="flex justify-between items-center p-4 bg-blue-500 text-white">
@@ -73,13 +83,21 @@ const ContentPage = () => {
                     </div>
                     <div className="w-1/3 border p-4">
                         {contentPage.discount_percentage > 0 && (
-                            <div className="bg-red-500 text-white inline-block px-2 py-1 rounded mb-2">
-                                {contentPage.discount_percentage}% OFF
-                            </div>
+                        <div className="bg-red-500 text-white inline-block px-2 py-1 rounded mb-2">
+                            {contentPage.discount_percentage}% OFF
+                        </div>
                         )}
-                        <div className="text-2xl mb-2">価格: <span className="text-red-500">¥{contentPage.display_price}</span></div>
-                        {contentPage.original_price && (
-                            <div className="text-lg mb-2">参考価格: <span className="text-red-500 line-through">¥{contentPage.original_price}</span></div>
+                        <div className="text-2xl mb-2">
+                            価格: <span className="text-red-500">
+                                {formatPrice(calculateDisplayPrice(contentPage.display_price, contentPage.discount_percentage))}
+                            </span>
+                        </div>
+                        {contentPage.discount_percentage > 0 && (
+                            <div className="text-lg mb-2">
+                                参考価格: <span className="text-gray-500 line-through">
+                                    {formatPrice(contentPage.display_price)}
+                                </span>
+                            </div>
                         )}
                         <button 
                             onClick={handlePurchase}

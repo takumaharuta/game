@@ -18,6 +18,7 @@ use App\Http\Controllers\ContentController;
 
 // 認証が不要なルート
 Route::get('/tags', [TagController::class, 'index']);
+Route::get('/content/{id}/price', [PaymentController::class, 'getPrice']);
 
 // 認証が必要なルート
 Route::middleware('auth:sanctum')->group(function () {
@@ -32,4 +33,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/content-page', [ContentController::class, 'storeContentPage']);
     Route::put('/content-page/{id}', [ContentController::class, 'updateContentPage']);
     Route::put('/content-page/{id}/toggle-publish', [ContentController::class, 'togglePublishContentPage']);
+    
+    Route::post('/payment', [PaymentController::class, 'store']);
 });

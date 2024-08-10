@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('purchases', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users');
-            $table->foreignId('content_id')->constrained('contents');
-            $table->decimal('price_paid', 8, 2);
-            $table->dateTime('purchase_date');
+            $table->foreignId('content_page_id')->constrained('content_pages');
+            $table->decimal('amount', 10, 2);
+            $table->string('transaction_id');
+            $table->timestamps();
         });
     }
 

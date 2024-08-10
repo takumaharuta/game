@@ -83,4 +83,9 @@ class ContentPage extends Model
     {
         return $this->belongsTo(User::class, 'creator_id');
     }
+    
+    public function purchases()
+    {
+        return $this->hasMany(Purchase::class);
+    }
 }
