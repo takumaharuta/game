@@ -60,6 +60,12 @@ const ContentPage = () => {
         }
     }, [contentPage.id, isLoading]);
     
+    // 日付をフォーマットする関数
+    const formatDate = (dateString) => {
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString('ja-JP', options);
+    };
+    
     return (
         <div className="content-page">
             <Header />
@@ -123,7 +129,7 @@ const ContentPage = () => {
                 <div className="mb-4 border p-4 rounded">
                     <div>平均評価: {contentPage.average_rating} {'★'.repeat(Math.round(contentPage.average_rating))}{'☆'.repeat(5 - Math.round(contentPage.average_rating))} (評価:{contentPage.rating_count}件)</div>
                     <div>作者名: {contentPage.author_name}</div>
-                    <div>公開日: {contentPage.publish_date}</div>
+                    <div>公開日: {formatDate(contentPage.publish_date || contentPage.created_at)}</div>
                     <div>購入数: {contentPage.purchase_count}件</div>
                     <div>お気に入り数: {contentPage.favorite_count}件</div>
                     <div>月間ランキング: {contentPage.monthly_ranking}位</div>
