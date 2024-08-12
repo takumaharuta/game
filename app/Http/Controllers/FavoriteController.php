@@ -16,10 +16,12 @@ class FavoriteController extends Controller
         $user->favorites()->toggle($contentPage);
 
         $isFavorite = $user->favorites()->where('content_page_id', $id)->exists();
+        $favoriteCount = $contentPage->favorites()->count();
 
         return response()->json([
             'success' => true,
             'isFavorite' => $isFavorite,
+            'favoriteCount' => $favoriteCount,
             'message' => $isFavorite ? 'お気に入りに追加しました' : 'お気に入りから削除しました'
         ]);
     }

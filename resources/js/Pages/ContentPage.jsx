@@ -20,6 +20,7 @@ const ContentPage = () => {
     const [relatedWorks, setRelatedWorks] = useState([]);
     const [isCurrentlyFavorite, setIsCurrentlyFavorite] = useState(isFavorite);
     const [isLoading, setIsLoading] = useState(false);
+    const [favoriteCount, setFavoriteCount] = useState(contentPage.favorites_count || 0);
 
     useEffect(() => {
         // APIからコメントと関連作品を取得する処理
@@ -53,6 +54,7 @@ const ContentPage = () => {
         try {
             const response = await axios.post(`/toggle-favorite/${contentPage.id}`);
             setIsCurrentlyFavorite(response.data.isFavorite);
+            setFavoriteCount(response.data.favoriteCount);
         } catch (error) {
             console.error('Error toggling favorite:', error);
         } finally {
@@ -131,7 +133,7 @@ const ContentPage = () => {
                     <div>作者名: {contentPage.author_name}</div>
                     <div>公開日: {formatDate(contentPage.publish_date || contentPage.created_at)}</div>
                     <div>購入数: {contentPage.purchase_count}件</div>
-                    <div>お気に入り数: {contentPage.favorite_count}件</div>
+                    <div>お気に入り数: {favoriteCount}件</div>
                     <div>月間ランキング: {contentPage.monthly_ranking}位</div>
                     <div>週間ランキング: {contentPage.weekly_ranking}位</div>
                 </div>
