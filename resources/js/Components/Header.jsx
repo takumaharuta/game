@@ -100,7 +100,7 @@ const Header = () => {
                             <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md overflow-hidden shadow-xl z-10">
                                 <Link href="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">マイページ</Link>
                                 <Link href="/following" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">フォロー中のクリエイター</Link>
-                                <Link href="/favorites" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">お気に入り作品</Link>
+                                <Link href="/favorite-works" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">お気に入り作品</Link>
                                 <Link href="/account-settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">アカウント設定</Link>
                                 <Link href="/create" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">作成画面</Link>
                                 <Link href="/notification-settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">通知設定</Link>

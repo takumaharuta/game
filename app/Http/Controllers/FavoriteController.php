@@ -17,11 +17,11 @@ class FavoriteController extends Controller
 
         $isFavorite = $user->favorites()->where('content_page_id', $id)->exists();
 
-        if (request()->wantsJson()) {
-            return response()->json(['isFavorite' => $isFavorite]);
-        }
-
-        return back()->with('success', $isFavorite ? 'お気に入りに追加しました' : 'お気に入りから削除しました');
+        return response()->json([
+            'success' => true,
+            'isFavorite' => $isFavorite,
+            'message' => $isFavorite ? 'お気に入りに追加しました' : 'お気に入りから削除しました'
+        ]);
     }
 
     public function index()
