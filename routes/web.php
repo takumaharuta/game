@@ -3,6 +3,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\ContentPageController;
 use App\Http\Controllers\TopPageController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -37,6 +38,10 @@ Route::middleware('auth')->group(function () {
     // Payment routes
     Route::get('/payment/{id}', [PaymentController::class, 'showForm'])->name('payment.form');
     Route::post('/payment/{id}/process', [PaymentController::class, 'processPayment'])->name('payment.process');
+    
+    // Favorite routes
+    Route::post('/toggle-favorite/{id}', [FavoriteController::class, 'toggle'])->name('favorite.toggle');
+    Route::get('/favorite-works', [FavoriteController::class, 'index'])->name('favorite.index');
 });
 
 // コンテンツページの表示（認証不要）

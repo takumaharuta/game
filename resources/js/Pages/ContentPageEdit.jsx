@@ -1,22 +1,22 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Link } from '@inertiajs/inertia-react';  // Linkコンポーネントをインポート
+import { Link } from '@inertiajs/inertia-react';
 import axios from 'axios';
 import { useDropzone } from 'react-dropzone';
 import { Inertia } from '@inertiajs/inertia';
 
 const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
-    const [contentPage, setContentPage] = useState({
+    const [contentPage, setContentPage] = useState(() => ({
         title: '',
         description: '',
         display_price: 1000,
         discount_percentage: 0,
-        tags: [],
         cover_image: null,
         ...initialContentPage,
-        tags: Array.isArray(initialContentPage.tags) 
+        tags: Array.isArray(initialContentPage.tags)
             ? initialContentPage.tags.map(tag => typeof tag === 'string' ? { name: tag } : tag)
             : []
-    });
+    }));
+
     const [mounted, setMounted] = useState(false);
     const [tagSuggestions, setTagSuggestions] = useState([]);
     const [existingTags, setExistingTags] = useState([]);

@@ -47,4 +47,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Creator::class);
     }
+    
+    public function favorites()
+    {
+        return $this->belongsToMany(ContentPage::class, 'favorites', 'user_id', 'content_page_id')->withTimestamps();
+    }
 }

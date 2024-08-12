@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { usePage } from '@inertiajs/react';
 import { Inertia } from '@inertiajs/inertia';
-import { FaStar } from 'react-icons/fa';
-import Header from '../Components/Header'; 
+import { FaStar, FaSearch, FaUser, FaHeart } from 'react-icons/fa';
+import Header from '../Components/Header';
+import axios from 'axios';
 
 const calculateDisplayPrice = (price, discountPercentage) => {
     return Math.round(price * (100 - discountPercentage) / 100);
@@ -12,12 +13,13 @@ const formatPrice = (price) => {
     return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(price);
 };
 
-
 const ContentPage = () => {
-    const { contentPage, isCreator } = usePage().props;
+    const { contentPage, isCreator, isFavorite } = usePage().props;
     const [showAllComments, setShowAllComments] = useState(false);
     const [comments, setComments] = useState([]);
     const [relatedWorks, setRelatedWorks] = useState([]);
+    const [isCurrentlyFavorite, setIsCurrentlyFavorite] = useState(isFavorite);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         // APIからコメントと関連作品を取得する処理
@@ -43,6 +45,20 @@ const ContentPage = () => {
         // 自分のコメントを編集する処理
         // 実際の実装はアプリケーションの要件に応じて行う
     };
+    
+    const handleFavoriteToggle = useCallback(async () => {
+        if (isLoading) return;
+
+        setIsLoading(true);
+        try {
+            const response = await axios.post(`/toggle-favorite/${contentPage.id}`);
+            setIsCurrentlyFavorite(response.data.isFavorite);
+        } catch (error) {
+            console.error('Error toggling favorite:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [contentPage.id, isLoading]);
     
     return (
         <div className="content-page">
@@ -89,8 +105,13 @@ const ContentPage = () => {
                         >
                             購入する
                         </button>
-                        <button className="border border-black text-black font-bold py-2 px-4 rounded w-full">
-                            お気に入りに追加
+                        <button 
+                            onClick={handleFavoriteToggle}
+                            disabled={isLoading}
+                            className={`border ${isCurrentlyFavorite ? 'bg-red-500 text-white' : 'border-black text-black'} font-bold py-2 px-4 rounded w-full flex items-center justify-center ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            <FaHeart className="mr-2" />
+                            {isLoading ? '処理中...' : (isCurrentlyFavorite ? 'お気に入り済み' : 'お気に入りに追加')}
                         </button>
                     </div>
                 </div>

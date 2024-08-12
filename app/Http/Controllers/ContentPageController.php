@@ -164,12 +164,15 @@ class ContentPageController extends Controller
     
     public function show($id)
     {
-        $contentPage = ContentPage::with(['creator', 'tags'])->findOrFail($id);
+        $contentPage = ContentPage::with('creator')->findOrFail($id);
         $contentPage->cover_image = $this->getImageUrl($contentPage->cover_image);
         $isCreator = auth()->check() && auth()->user()->id === $contentPage->creator_id;
+        $isFavorite = auth()->check() && auth()->user()->favorites()->where('content_page_id', $id)->exists();
+
         return Inertia::render('ContentPage', [
             'contentPage' => $contentPage,
             'isCreator' => $isCreator,
+            'isFavorite' => $isFavorite,
         ]);
     }
     
