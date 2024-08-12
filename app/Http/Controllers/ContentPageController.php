@@ -164,13 +164,12 @@ class ContentPageController extends Controller
     
     public function show($id)
     {
-        $contentPage = ContentPage::with('creator')->findOrFail($id);
-        $contentPage->cover_image = $this->getImageUrl($contentPage->cover_image);
+        $contentPage = ContentPage::withCount('favorites')->findOrFail($id);
         $isCreator = auth()->check() && auth()->user()->id === $contentPage->creator_id;
         $isFavorite = auth()->check() && auth()->user()->favorites()->where('content_page_id', $id)->exists();
 
         return Inertia::render('ContentPage', [
-            'contentPage' => $contentPage,
+            'contentPage' => array_merge($contentPage->toArray(), ['favorites_count' => $contentPage->favorites_count]),
             'isCreator' => $isCreator,
             'isFavorite' => $isFavorite,
         ]);
