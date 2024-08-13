@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\ContentController;
+use App\Http\Controllers\ContentPageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +21,7 @@ use App\Http\Controllers\ContentController;
 Route::get('/tags', [TagController::class, 'index']);
 Route::get('/content/{id}/price', [PaymentController::class, 'getPrice']);
 Route::get('/top-tags', [TagController::class, 'getTopTags']);
+Route::get('/content-page/{id}/purchase-count', [ContentPageController::class, 'getPurchaseCount']);
 
 // 認証が必要なルート
 Route::middleware('auth:sanctum')->group(function () {
