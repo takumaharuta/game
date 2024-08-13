@@ -21,6 +21,7 @@ const ContentPage = () => {
     const [isCurrentlyFavorite, setIsCurrentlyFavorite] = useState(isFavorite);
     const [isLoading, setIsLoading] = useState(false);
     const [favoriteCount, setFavoriteCount] = useState(contentPage.favorites_count || 0);
+    const [purchaseCount, setPurchaseCount] = useState(contentPage.purchase_count || 0);
 
     useEffect(() => {
         // APIからコメントと関連作品を取得する処理
@@ -28,14 +29,49 @@ const ContentPage = () => {
         // setComments(fetchedComments);
         // setRelatedWorks(fetchedRelatedWorks);
     }, []);
+    
+    useEffect(() => {
+        // 購入数を再取得する関数
+        const fetchPurchaseCount = async () => {
+            try {
+                const response = await axios.get(`/api/content-page/${contentPage.id}/purchase-count`);
+                setPurchaseCount(response.data.purchaseCount);
+            } catch (error) {
+                console.error('Error fetching purchase count:', error);
+            }
+        };
+        
+        // コンポーネントがマウントされたときと、
+        // ページにフォーカスが戻ってきたときに購入数を再取得
+        fetchPurchaseCount();
+        window.addEventListener('focus', fetchPurchaseCount);
+        
+        return () => {
+            window.removeEventListener('focus', fetchPurchaseCount);
+        };
+    }, [contentPage.id]);
 
     const handleEdit = () => {
         Inertia.get(`/content-page/edit/${contentPage.id}`);
     };
     
-    const handlePurchase = () => {
-        Inertia.get(`/payment/${contentPage.id}`);
-    };
+    const handlePurchase = useCallback(() => {
+        // 現在の購入画面遷移機能を維持
+        Inertia.get(`/payment/${contentPage.id}`, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                // 購入処理が成功した場合、購入数を再取得
+                axios.get(`/api/content-page/${contentPage.id}/purchase-count`)
+                    .then(response => {
+                        setPurchaseCount(response.data.purchaseCount);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching updated purchase count:', error);
+                    });
+            }
+        });
+    }, [contentPage.id]);
 
     const handleAddComment = () => {
         // コメント追加のモーダルを表示する処理
@@ -132,7 +168,7 @@ const ContentPage = () => {
                     <div>平均評価: {contentPage.average_rating} {'★'.repeat(Math.round(contentPage.average_rating))}{'☆'.repeat(5 - Math.round(contentPage.average_rating))} (評価:{contentPage.rating_count}件)</div>
                     <div>作者名: {contentPage.author_name}</div>
                     <div>公開日: {formatDate(contentPage.publish_date || contentPage.created_at)}</div>
-                    <div>購入数: {contentPage.purchase_count}件</div>
+                    <div>購入数: {purchaseCount}件</div>
                     <div>お気に入り数: {favoriteCount}件</div>
                     <div>月間ランキング: {contentPage.monthly_ranking}位</div>
                     <div>週間ランキング: {contentPage.weekly_ranking}位</div>

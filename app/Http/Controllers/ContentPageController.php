@@ -186,4 +186,14 @@ class ContentPageController extends Controller
             return response()->json(['error' => 'Failed to retrieve price'], 500);
         }
     }
+    
+    public function getPurchaseCount($id)
+    {
+        $contentPage = ContentPage::findOrFail($id);
+        $purchaseCount = $contentPage->purchases()->count();
+
+        return response()->json([
+            'purchaseCount' => $purchaseCount
+        ]);
+    }
 }
