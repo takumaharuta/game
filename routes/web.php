@@ -5,6 +5,7 @@ use App\Http\Controllers\ContentPageController;
 use App\Http\Controllers\TopPageController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PurchasedWorksController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -42,6 +43,9 @@ Route::middleware('auth')->group(function () {
     // Favorite routes
     Route::post('/toggle-favorite/{id}', [FavoriteController::class, 'toggle'])->name('favorite.toggle');
     Route::get('/favorite-works', [FavoriteController::class, 'index'])->name('favorite.index');
+    
+    // 購入済み作品一覧
+    Route::get('/purchased-works', [PurchasedWorksController::class, 'index'])->name('purchased-works.index');
 });
 
 // コンテンツページの表示（認証不要）
