@@ -1,21 +1,40 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import React from 'react';
+import { Link } from '@inertiajs/inertia-react';
+import Header from '../Components/Header';
 
-export default function Dashboard({ auth }) {
-    return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Dashboard</h2>}
-        >
-            <Head title="Dashboard" />
+const Dashboard = () => {
+  const navItems = [
+    { href: '/account-info', label: 'アカウント情報' },
+    { href: '/purchased-favorites', label: '購入済み/お気に入り' },
+    { href: '/following-list', label: 'フォロー一覧' },
+    { href: '/creator-dashboard', label: 'クリエイター画面' },
+  ];
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">You're logged in!</div>
-                    </div>
-                </div>
-            </div>
-        </AuthenticatedLayout>
-    );
-}
+  const isActive = (path) => window.location.pathname.startsWith(path);
+
+  return (
+    <div className="min-h-screen bg-white">
+      <Header />
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex mb-8 overflow-hidden rounded-lg border border-gray-200">
+          {navItems.map((item, index) => (
+            <Link
+              key={index}
+              href={item.href}
+              className={`flex-1 font-bold py-2 px-4 text-center ${
+                isActive(item.href)
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-white text-blue-500 hover:bg-blue-50'
+              } ${index > 0 ? 'border-l border-gray-200' : ''}`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+        {/* 既存のダッシュボードコンテンツがあればここに配置 */}
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;

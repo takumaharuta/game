@@ -28,10 +28,26 @@ Route::middleware('auth')->group(function () {
         return $request->user();
     });
 
-    // 既存のルート
+    // Mypage routes
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
+    
+    Route::get('/account-info', function () {
+        return Inertia::render('AccountInfo');
+    })->name('account.info');
+
+    Route::get('/purchased-favorites', function () {
+        return Inertia::render('PurchasedFavorites');
+    })->name('purchased.favorites');
+
+    Route::get('/following-list', function () {
+        return Inertia::render('FollowingList');
+    })->name('following.list');
+
+    Route::get('/creator-dashboard', function () {
+        return Inertia::render('CreatorDashboard');
+    })->name('creator.dashboard');
 
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
