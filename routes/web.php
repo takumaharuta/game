@@ -1,4 +1,5 @@
 <?php
+
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\ContentPageController;
@@ -6,6 +7,7 @@ use App\Http\Controllers\TopPageController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PurchasedWorksController;
+use App\Http\Controllers\TagController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -13,8 +15,19 @@ use Inertia\Inertia;
 // トップページ（認証不要）
 Route::get('/', [TopPageController::class, 'index'])->name('top');
 
+// 認証不要のルート（api.phpから移動）
+Route::get('/tags', [TagController::class, 'index']);
+Route::get('/top-tags', [TagController::class, 'getTopTags']);
+Route::get('/content/{id}/price', [PaymentController::class, 'getPrice']);
+Route::get('/content-page/{id}/purchase-count', [ContentPageController::class, 'getPurchaseCount']);
+
 Route::middleware('auth')->group(function () {
-    // Dashboard
+    // api.phpから移動したルート
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    // 既存のルート
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');

@@ -41,7 +41,7 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
 
     const fetchExistingTags = async () => {
         try {
-            const response = await axios.get('/api/tags');
+            const response = await axios.get('/tags');
             setExistingTags(response.data);
         } catch (error) {
             console.error('Error fetching existing tags:', error);

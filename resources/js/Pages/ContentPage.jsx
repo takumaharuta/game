@@ -34,7 +34,7 @@ const ContentPage = () => {
         // 購入数を再取得する関数
         const fetchPurchaseCount = async () => {
             try {
-                const response = await axios.get(`/api/content-page/${contentPage.id}/purchase-count`);
+                const response = await axios.get(`/content-page/${contentPage.id}/purchase-count`);
                 setPurchaseCount(response.data.purchaseCount);
             } catch (error) {
                 console.error('Error fetching purchase count:', error);
@@ -62,7 +62,7 @@ const ContentPage = () => {
             preserveScroll: true,
             onSuccess: () => {
                 // 購入処理が成功した場合、購入数を再取得
-                axios.get(`/api/content-page/${contentPage.id}/purchase-count`)
+                axios.get(`/content-page/${contentPage.id}/purchase-count`)
                     .then(response => {
                         setPurchaseCount(response.data.purchaseCount);
                     })

@@ -39,7 +39,7 @@ const Header = () => {
 
     const fetchTopTags = async () => {
         try {
-            const response = await axios.get('/api/top-tags');
+            const response = await axios.get('/top-tags');
             setTopTags(response.data.slice(0, 5));
         } catch (error) {
             console.error('Error fetching top tags:', error);
