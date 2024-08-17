@@ -24,11 +24,18 @@ const ContentPage = () => {
     const [purchaseCount, setPurchaseCount] = useState(contentPage.purchase_count || 0);
 
     useEffect(() => {
-        // APIからコメントと関連作品を取得する処理
-        // この部分は実際のAPIエンドポイントに合わせて実装する必要があります
-        // setComments(fetchedComments);
-        // setRelatedWorks(fetchedRelatedWorks);
-    }, []);
+        // コメントを取得する処理
+        const fetchComments = async () => {
+            try {
+                const response = await axios.get(`/content-page/${contentPage.id}/comments`);
+                setComments(response.data);
+            } catch (error) {
+                console.error('Error fetching comments:', error);
+            }
+        };
+        fetchComments();
+        // 関連作品の取得処理は必要に応じて実装
+    }, [contentPage.id]);
     
     useEffect(() => {
         // 購入数を再取得する関数
@@ -178,26 +185,15 @@ const ContentPage = () => {
                     <p>{contentPage.description}</p>
                 </div>
                 <div className="mb-4">
-                    <div className="flex justify-between items-center mb-2">
-                        <h3 className="text-xl font-bold">コメント一覧</h3>
-                        <button onClick={handleAddComment} className="bg-blue-500 text-white font-bold py-2 px-4 rounded">
-                            コメントを追加する
-                        </button>
-                    </div>
+                    <h3 className="text-xl font-bold mb-2">コメント一覧</h3>
                     <div className="border p-4 rounded">
                         {comments.slice(0, showAllComments ? comments.length : 2).map((comment, index) => (
                             <div key={index} className="border-b last:border-b-0 pb-2 mb-2 last:pb-0 last:mb-0">
                                 <div className="flex justify-between">
-                                    <span>{comment.user_name}</span>
-                                    <span>{comment.date}</span>
+                                    <span>{comment.user.name}</span>
+                                    <span>{formatDate(comment.created_at)}</span>
                                 </div>
-                                <div>{'★'.repeat(comment.rating)}{'☆'.repeat(5 - comment.rating)}</div>
-                                <p>{comment.text}</p>
-                                {comment.is_own_comment && (
-                                    <button onClick={handleEditComment} className="text-blue-500">
-                                        編集
-                                    </button>
-                                )}
+                                <p>{comment.content}</p>
                             </div>
                         ))}
                         {comments.length > 2 && !showAllComments && (

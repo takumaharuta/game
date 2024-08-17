@@ -8,6 +8,7 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PurchasedWorksController;
 use App\Http\Controllers\TagController;
+use App\Http\Controllers\CommentController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -56,6 +57,11 @@ Route::middleware('auth')->group(function () {
     // Favorite routes
     Route::post('/toggle-favorite/{id}', [FavoriteController::class, 'toggle'])->name('favorite.toggle');
     Route::get('/favorite-works', [FavoriteController::class, 'index'])->name('favorite.index');
+    
+    // Comment routes
+    Route::post('/content-page/{id}/comment', [CommentController::class, 'store'])->name('comment.store');
+    Route::put('/content-page/{id}/comment/{commentId}', [CommentController::class, 'update'])->name('comment.update');
+    Route::get('/content-page/{id}/comments', [CommentController::class, 'index'])->name('comment.index');
     
     // 購入済み作品一覧
     Route::get('/purchased-works', [PurchasedWorksController::class, 'index'])->name('purchased-works.index');

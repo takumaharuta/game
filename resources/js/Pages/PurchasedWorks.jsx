@@ -1,8 +1,64 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from '@inertiajs/inertia-react';
+import axios from 'axios';
 import Header from '../Components/Header';
 
+const MAX_COMMENT_LENGTH = 500;
+
 const PurchasedWorks = ({ purchasedWorks }) => {
+    const [comments, setComments] = useState({});
+    const [newComments, setNewComments] = useState({});
+    const [commentErrors, setCommentErrors] = useState({});
+    const [editingCommentId, setEditingCommentId] = useState(null);
+
+    useEffect(() => {
+        purchasedWorks.forEach(work => fetchComments(work.id));
+    }, []);
+
+    const fetchComments = async (workId) => {
+        try {
+            const response = await axios.get(`/content-page/${workId}/comments`);
+            setComments(prevComments => ({ ...prevComments, [workId]: response.data }));
+        } catch (error) {
+            console.error('Error fetching comments:', error);
+        }
+    };
+
+    const handleCommentChange = (workId, content) => {
+        if (content.length <= MAX_COMMENT_LENGTH) {
+            setNewComments(prevComments => ({ ...prevComments, [workId]: content }));
+        }
+    };
+
+    const submitComment = async (workId) => {
+        try {
+            if (editingCommentId) {
+                await axios.put(`/content-page/${workId}/comment/${editingCommentId}`, { content: newComments[workId] });
+            } else {
+                await axios.post(`/content-page/${workId}/comment`, { content: newComments[workId] });
+            }
+            setNewComments(prevComments => ({ ...prevComments, [workId]: '' }));
+            fetchComments(workId);
+            setCommentErrors(prevErrors => ({ ...prevErrors, [workId]: '' }));
+            setEditingCommentId(null);
+        } catch (error) {
+            setCommentErrors(prevErrors => ({ 
+                ...prevErrors, 
+                [workId]: error.response?.data?.message || 'エラーが発生しました。'
+            }));
+        }
+    };
+
+    const startEditing = (workId, commentId, content) => {
+        setEditingCommentId(commentId);
+        setNewComments(prevComments => ({ ...prevComments, [workId]: content }));
+    };
+
+    const cancelEditing = (workId) => {
+        setEditingCommentId(null);
+        setNewComments(prevComments => ({ ...prevComments, [workId]: '' }));
+    };
+
     return (
         <div>
             <Header />
@@ -18,10 +74,74 @@ const PurchasedWorks = ({ purchasedWorks }) => {
                                 <p className="text-gray-500 mb-2">購入日: {work.purchase_date}</p>
                                 <Link
                                     href={`/content-page/${work.id}`}
-                                    className="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                    className="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-2"
                                 >
                                     作品を見る
                                 </Link>
+                                <div className="mt-4">
+                                    <h3 className="text-lg font-semibold">コメント</h3>
+                                    {comments[work.id] && comments[work.id].length > 0 ? (
+                                        comments[work.id].map((comment) => (
+                                            <div key={comment.id} className="bg-gray-100 p-2 rounded mt-2">
+                                                {editingCommentId === comment.id ? (
+                                                    <>
+                                                        <textarea
+                                                            value={newComments[work.id] || ''}
+                                                            onChange={(e) => handleCommentChange(work.id, e.target.value)}
+                                                            className="w-full mt-2 p-2 border rounded"
+                                                            placeholder="コメントを入力..."
+                                                        />
+                                                        <p className="text-sm text-gray-500 mt-1">
+                                                            {newComments[work.id]?.length || 0}/{MAX_COMMENT_LENGTH}文字
+                                                        </p>
+                                                        <button
+                                                            onClick={() => submitComment(work.id)}
+                                                            className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2"
+                                                        >
+                                                            更新
+                                                        </button>
+                                                        <button
+                                                            onClick={() => cancelEditing(work.id)}
+                                                            className="mt-2 bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
+                                                        >
+                                                            キャンセル
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <p>{comment.content}</p>
+                                                        <p className="text-sm text-gray-500">By: {comment.user.name}</p>
+                                                        <button
+                                                            onClick={() => startEditing(work.id, comment.id, comment.content)}
+                                                            className="mt-2 text-blue-500 hover:underline"
+                                                        >
+                                                            編集
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div>
+                                            <textarea
+                                                value={newComments[work.id] || ''}
+                                                onChange={(e) => handleCommentChange(work.id, e.target.value)}
+                                                className="w-full mt-2 p-2 border rounded"
+                                                placeholder="コメントを入力..."
+                                            />
+                                            <p className="text-sm text-gray-500 mt-1">
+                                                {newComments[work.id]?.length || 0}/{MAX_COMMENT_LENGTH}文字
+                                            </p>
+                                            {commentErrors[work.id] && <p className="text-red-500">{commentErrors[work.id]}</p>}
+                                            <button
+                                                onClick={() => submitComment(work.id)}
+                                                className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                            >
+                                                コメントする
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     ))}
