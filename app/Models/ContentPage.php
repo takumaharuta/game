@@ -58,20 +58,6 @@ class ContentPage extends Model
         $this->attributes['cover_image'] = $value;
     }
 
-    public function getAverageRatingAttribute()
-    {
-        // 実際のレーティングシステムが実装されるまでは、ランダムな値を返す
-        return number_format(rand(1, 50) / 10, 1);
-    }
-
-    public function getPurchaseCountAttribute()
-    {
-        // 実際の購入システムが実装されるまでは、ランダムな値を返す
-        return rand(0, 1000);
-    }
-    
-    
-
     public function toArray()
     {
         $array = parent::toArray();
@@ -97,5 +83,16 @@ class ContentPage extends Model
     public function comments()
     {
         return $this->hasMany(Comment::class);
+    }
+    
+    public function getAverageRatingAttribute()
+    {
+        $averageRating = $this->comments()->avg('rating');
+        return $averageRating ? round($averageRating, 1) : 0;
+    }
+
+    public function getRatingCountAttribute()
+    {
+        return $this->comments()->whereNotNull('rating')->count();
     }
 }

@@ -57,6 +57,7 @@ class TopPageController extends Controller
             'discount_percentage' => $content->discount_percentage,
             'author_name' => $content->creator->name ?? 'Unknown Author',
             'average_rating' => $content->average_rating ?? 0,
+            'rating_count' => $content->rating_count ?? 0,
             'purchase_count' => $content->purchase_count,
         ];
     }

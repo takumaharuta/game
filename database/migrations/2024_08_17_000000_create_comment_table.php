@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('content_page_id')->constrained('content_pages')->onDelete('cascade');
             $table->text('content');
+            $table->integer('rating');
             $table->timestamps();
             $table->unique(['user_id', 'content_page_id']);
         });

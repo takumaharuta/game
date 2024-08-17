@@ -13,6 +13,7 @@ class CommentController extends Controller
     {
         $request->validate([
             'content' => 'required|string|max:500',
+            'rating' => 'required|integer|min:1|max:5',
         ]);
 
         $contentPage = ContentPage::findOrFail($contentPageId);
@@ -24,6 +25,7 @@ class CommentController extends Controller
 
         $comment = new Comment([
             'content' => $request->content,
+            'rating' => $request->rating,
         ]);
 
         $comment->user()->associate(Auth::user());
@@ -37,6 +39,7 @@ class CommentController extends Controller
     {
         $request->validate([
             'content' => 'required|string|max:500',
+            'rating' => 'required|integer|min:1|max:5',
         ]);
 
         $comment = Comment::findOrFail($commentId);
@@ -47,6 +50,7 @@ class CommentController extends Controller
         }
 
         $comment->content = $request->content;
+        $comment->rating = $request->rating;
         $comment->save();
 
         return response()->json($comment);

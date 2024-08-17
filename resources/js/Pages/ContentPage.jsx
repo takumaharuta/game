@@ -80,14 +80,17 @@ const ContentPage = () => {
         });
     }, [contentPage.id]);
 
-    const handleAddComment = () => {
-        // コメント追加のモーダルを表示する処理
-        // 実際の実装はアプリケーションの要件に応じて行う
-    };
-
-    const handleEditComment = () => {
-        // 自分のコメントを編集する処理
-        // 実際の実装はアプリケーションの要件に応じて行う
+    const renderStars = (rating) => {
+        return (
+            <>
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <FaStar
+                        key={star}
+                        className={star <= rating ? "text-yellow-400" : "text-gray-300"}
+                    />
+                ))}
+            </>
+        );
     };
     
     const handleFavoriteToggle = useCallback(async () => {
@@ -172,7 +175,16 @@ const ContentPage = () => {
                     ))}
                 </div>
                 <div className="mb-4 border p-4 rounded">
-                    <div>平均評価: {contentPage.average_rating} {'★'.repeat(Math.round(contentPage.average_rating))}{'☆'.repeat(5 - Math.round(contentPage.average_rating))} (評価:{contentPage.rating_count}件)</div>
+                    <div className="flex items-center">
+                        <span className="mr-2">評価:</span>
+                        {renderStars(contentPage.average_rating)}
+                        <span className="ml-2">
+                            {contentPage.average_rating.toFixed(1)}
+                            <span className="text-gray-500 ml-1">
+                                ({contentPage.rating_count}件)
+                            </span>
+                        </span>
+                    </div>
                     <div>作者名: {contentPage.author_name}</div>
                     <div>公開日: {formatDate(contentPage.publish_date || contentPage.created_at)}</div>
                     <div>購入数: {purchaseCount}件</div>
