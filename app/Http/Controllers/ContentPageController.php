@@ -169,7 +169,11 @@ class ContentPageController extends Controller
         $isFavorite = auth()->check() && auth()->user()->favorites()->where('content_page_id', $id)->exists();
 
         return Inertia::render('ContentPage', [
-            'contentPage' => array_merge($contentPage->toArray(), ['favorites_count' => $contentPage->favorites_count]),
+            'contentPage' => array_merge($contentPage->toArray(), [
+                'favorites_count' => $contentPage->favorites_count,
+                'average_rating' => $contentPage->average_rating,
+                'rating_count' => $contentPage->rating_count,
+            ]),
             'isCreator' => $isCreator,
             'isFavorite' => $isFavorite,
         ]);

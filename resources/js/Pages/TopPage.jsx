@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { FaSearch, FaUser } from 'react-icons/fa';
+import { FaSearch, FaUser, FaStar } from 'react-icons/fa';
 import Header from '../Components/Header'; 
 
 const calculateDisplayPrice = (price, discountPercentage) => {
@@ -9,6 +9,19 @@ const calculateDisplayPrice = (price, discountPercentage) => {
 
 const formatPrice = (price) => {
     return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(price);
+};
+
+const renderStars = (rating) => {
+    return (
+        <>
+            {[1, 2, 3, 4, 5].map((star) => (
+                <FaStar
+                    key={star}
+                    className={star <= rating ? "text-yellow-400" : "text-gray-300"}
+                />
+            ))}
+        </>
+    );
 };
 
 const ContentCard = ({ content }) => (
@@ -33,8 +46,14 @@ const ContentCard = ({ content }) => (
     </div>
     <div className="text-sm font-medium truncate">{content.title}</div>
     <div className="text-sm text-gray-600">{content.author_name}</div>
-    <div className="text-sm">
-      {'★'.repeat(Math.round(content.average_rating))}{'☆'.repeat(5 - Math.round(content.average_rating))}
+    <div className="flex items-center text-sm">
+      {renderStars(content.average_rating)}
+      <span className="ml-1">
+        {content.average_rating.toFixed(1)}
+        <span className="text-gray-500 ml-1">
+          ({content.rating_count}件)
+        </span>
+      </span>
     </div>
   </div>
 );
