@@ -36,7 +36,7 @@ const Header = () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
-
+    
     const fetchTopTags = async () => {
         try {
             const response = await axios.get('/top-tags');
@@ -98,7 +98,7 @@ const Header = () => {
                         <>
                             <div className="absolute left-0 w-full h-2 bg-transparent" />
                             <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md overflow-hidden shadow-xl z-10">
-                                <Link href="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">マイページ</Link>
+                                <Link href="/mypage" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">マイページ</Link>
                                 <Link href="/purchased-works" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">購入済み作品一覧</Link>
                                 <Link href="/following" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">フォロー中のクリエイター</Link>
                                 <Link href="/account-settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">アカウント設定</Link>

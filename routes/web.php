@@ -9,6 +9,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PurchasedWorksController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\MypageController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -27,28 +28,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-
-    // Mypage routes
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
     
-    Route::get('/account-info', function () {
-        return Inertia::render('AccountInfo');
-    })->name('account.info');
-
-    Route::get('/purchased-favorites', function () {
-        return Inertia::render('PurchasedFavorites');
-    })->name('purchased.favorites');
-
-    Route::get('/following-list', function () {
-        return Inertia::render('FollowingList');
-    })->name('following.list');
-
-    Route::get('/creator-dashboard', function () {
-        return Inertia::render('CreatorDashboard');
-    })->name('creator.dashboard');
-
+    // Mypage routes
+    Route::get('/mypage', [MypageController::class, 'index'])->name('mypage');
+    Route::get('/api/user-info', [MypageController::class, 'getUserInfo'])->name('user.info');
+    
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
