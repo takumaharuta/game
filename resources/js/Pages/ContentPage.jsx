@@ -24,17 +24,17 @@ const ContentPage = () => {
     const [purchaseCount, setPurchaseCount] = useState(contentPage.purchase_count || 0);
 
     useEffect(() => {
-        // コメントを取得する処理
         const fetchComments = async () => {
             try {
-                const response = await axios.get(`/content-page/${contentPage.id}/comments`);
+                const response = await axios.get(`/content-page/${contentPage.id}/comments`, {
+                    withCredentials: true  // これを追加
+                });
                 setComments(response.data);
             } catch (error) {
                 console.error('Error fetching comments:', error);
             }
         };
         fetchComments();
-        // ... 他の副作用 ...
     }, [contentPage.id]);
     
     useEffect(() => {
