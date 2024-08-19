@@ -34,7 +34,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        // リダイレクト先を決定
+        $intendedUrl = $request->input('intended', '/');
+        
+        // もし intended が '/' でない場合はそこにリダイレクト、そうでなければトップページへ
+        return redirect()->intended($intendedUrl !== '/' ? $intendedUrl : '/');
     }
 
     /**
