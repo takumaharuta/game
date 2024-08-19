@@ -14,7 +14,7 @@ const formatPrice = (price) => {
 };
 
 const ContentPage = () => {
-    const { contentPage, isCreator, isFavorite } = usePage().props;
+    const { contentPage, isCreator, isFavorite, auth } = usePage().props;
     const [showAllComments, setShowAllComments] = useState(false);
     const [comments, setComments] = useState([]);
     const [relatedWorks, setRelatedWorks] = useState([]);
@@ -34,7 +34,7 @@ const ContentPage = () => {
             }
         };
         fetchComments();
-        // 関連作品の取得処理は必要に応じて実装
+        // ... 他の副作用 ...
     }, [contentPage.id]);
     
     useEffect(() => {
@@ -206,6 +206,10 @@ const ContentPage = () => {
                                     <span>{formatDate(comment.created_at)}</span>
                                 </div>
                                 <p>{comment.content}</p>
+                                <div className="flex items-center mt-1">
+                                    <span className="mr-2">評価:</span>
+                                    {renderStars(comment.rating)}
+                                </div>
                             </div>
                         ))}
                         {comments.length > 2 && !showAllComments && (

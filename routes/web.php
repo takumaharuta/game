@@ -22,6 +22,7 @@ Route::get('/tags', [TagController::class, 'index']);
 Route::get('/top-tags', [TagController::class, 'getTopTags']);
 Route::get('/content/{id}/price', [PaymentController::class, 'getPrice']);
 Route::get('/content-page/{id}/purchase-count', [ContentPageController::class, 'getPurchaseCount']);
+Route::get('/content-page/{id}/comments', [CommentController::class, 'index'])->name('comment.index');
 
 Route::middleware('auth')->group(function () {
     // api.phpから移動したルート
