@@ -62,8 +62,7 @@ Route::middleware('auth')->group(function () {
     // Comment routes
     Route::post('/content-page/{id}/comment', [CommentController::class, 'store'])->name('comment.store');
     Route::put('/content-page/{id}/comment/{commentId}', [CommentController::class, 'update'])->name('comment.update');
-    Route::get('/content-page/{id}/comments', [CommentController::class, 'index'])->name('comment.index');
-    
+
     // 購入済み作品一覧
     Route::get('/purchased-works', [PurchasedWorksController::class, 'index'])->name('purchased-works.index');
 });
