@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from '@inertiajs/inertia-react';
 import axios from 'axios';
-import Header from '../Components/Header';
 
 const MAX_COMMENT_LENGTH = 500;
 
@@ -86,7 +85,6 @@ const PurchasedWorks = ({ purchasedWorks }) => {
 
     return (
         <div>
-            <Header />
             <main className="container mx-auto p-4">
                 <h1 className="text-2xl font-bold mb-4">購入済み作品一覧</h1>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

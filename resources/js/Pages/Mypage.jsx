@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Header from '../Components/Header';
+import PurchasedWorks from './PurchasedWorks'; //インポートしてくる感じ
 
-const Mypage = () => {
+
+const Mypage = ({purchasedWorks}) => {
   const [activeTab, setActiveTab] = useState('account-info');
   const [userInfo, setUserInfo] = useState(null);
   const [editMode, setEditMode] = useState(false);
@@ -18,8 +20,8 @@ const Mypage = () => {
 
   const navItems = [
     { id: 'account-info', label: 'アカウント情報' },
-    { id: 'purchased-favorites', label: '購入済み/お気に入り' },
-    { id: 'following-list', label: 'フォロー一覧' },
+    { id: 'purchased', label: '購入済み' },
+    { id: 'following-favorites', label: 'フォロー/お気に入り' },
     { id: 'creator-dashboard', label: 'クリエイター画面' },
   ];
 
@@ -200,7 +202,12 @@ const Mypage = () => {
             {success && <p className="text-green-500 mt-2">{success}</p>}
           </div>
         )}
+        {activeTab === 'purchased' && (
+          <PurchasedWorks purchasedWorks={purchasedWorks} />
+        )}
+
         {/* 他のタブのコンテンツをここに追加 */}
+        
       </main>
     </div>
   );
