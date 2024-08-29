@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from '@inertiajs/react';
 import axios from 'axios';
 import Header from '../Components/Header';
 import PurchasedWorks from './PurchasedWorks';
@@ -6,12 +7,12 @@ import FavoriteWorks from './FavoriteWorks';
 
 const Mypage = ({ purchasedWorks, favoriteWorks }) => {
   console.log('Mypage props:', { purchasedWorks, favoriteWorks });
-  
+
   // 安全性チェックを追加
-    if (!favoriteWorks || !Array.isArray(favoriteWorks)) {
-        return <div>お気に入りの作品はありません。</div>;
-    }
-    
+  if (!favoriteWorks || !Array.isArray(favoriteWorks)) {
+    return <div>お気に入りの作品はありません。</div>;
+  }
+
   const [activeTab, setActiveTab] = useState('account-info');
   const [userInfo, setUserInfo] = useState(null);
   const [editMode, setEditMode] = useState(false);
@@ -29,7 +30,6 @@ const Mypage = ({ purchasedWorks, favoriteWorks }) => {
     { id: 'account-info', label: 'アカウント情報' },
     { id: 'purchased', label: '購入済み' },
     { id: 'favorites', label: 'お気に入り' },
-    { id: 'following', label: 'フォロー' },
     { id: 'creator-dashboard', label: 'クリエイター画面' },
   ];
 
@@ -137,9 +137,19 @@ const Mypage = ({ purchasedWorks, favoriteWorks }) => {
                 <div className="mb-2"><strong>ユーザー名:</strong> {userInfo.name}</div>
                 <div className="mb-2"><strong>メールアドレス:</strong> {userInfo.email}</div>
                 <div className="mb-4"><strong>パスワード:</strong> ********</div>
-                <button onClick={handleEdit} className="bg-blue-500 text-white px-4 py-2 rounded">
-                  編集
-                </button>
+                <div className="flex space-x-2">
+                  <button onClick={handleEdit} className="bg-blue-500 text-white px-4 py-2 rounded">
+                    編集
+                  </button>
+                  <Link
+                    href="/logout"
+                    method="post"
+                    as="button"
+                    className="bg-red-500 text-white px-4 py-2 rounded"
+                  >
+                    ログアウト
+                  </Link>
+                </div>
               </>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">

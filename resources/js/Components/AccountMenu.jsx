@@ -1,19 +1,19 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
 
-const AccountMenu = ({ isVisible, onMouseEnter, onMouseLeave }) => {
-    const menuItems = [
-        { label: 'トップページ', href: '/' },
-        { label: 'マイページ', href: '/dashboard' },
-        { label: 'フォロー中のクリエイター', href: '/following' },
-        { label: 'お気に入り作品', href: '/favorite-works' },
-        { label: 'アカウント設定', href: '/account-settings' },
-        { label: '作成画面', href: '/create' },
-        { label: '通知設定', href: '/notification-settings' },
-        { label: 'ログアウト', href: '/logout' },
-        { label: 'お知らせ', href: '/announcements' },
-        { label: 'よくある質問', href: '/faq' },
-    ];
+const AccountMenu = ({ isVisible, onMouseEnter, onMouseLeave, isLoggedIn }) => {
+    const menuItems = isLoggedIn
+        ? [
+            { label: 'ログアウト', href: '/logout' },
+            { label: 'マイページ', href: '/dashboard' },
+            { label: 'お知らせ', href: '/announcements' },
+            { label: 'よくある質問', href: '/faq' },
+          ]
+        : [
+            { label: 'ログイン', href: '/login' },
+            { label: 'お知らせ', href: '/announcements' },
+            { label: 'よくある質問', href: '/faq' },
+          ];
 
     if (!isVisible) return null;
 
