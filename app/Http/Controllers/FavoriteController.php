@@ -31,7 +31,7 @@ class FavoriteController extends Controller
         $user = auth()->user();
         $favoriteWorks = $user->favorites()->with('creator')->get();
 
-        return Inertia::render('FavoriteWorksPage', [
+        return Inertia::render('FavoriteWorks', [
             'favoriteWorks' => $favoriteWorks,
         ]);
     }
