@@ -10,8 +10,10 @@ class MypageController extends Controller
 {
     public function index()
     {
-        $purchasedWorks = Purchase::with('contentPage')
-            ->where('user_id', auth()->id())
+        $user = auth()->user();
+
+        $purchasedWorks = Purchase::with('contentPage.creator')
+            ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($purchase) {
@@ -19,13 +21,34 @@ class MypageController extends Controller
                     'id' => $purchase->contentPage->id,
                     'title' => $purchase->contentPage->title,
                     'cover_image' => $purchase->contentPage->cover_image,
-                    'author_name' => $purchase->contentPage->author_name,
+                    'author_name' => $purchase->contentPage->creator->name ?? 'Unknown Author',
                     'purchase_date' => $purchase->created_at->format('Y-m-d'),
                 ];
             });
-            
-        return Inertia::render('Mypage',[
-            'purchasedWorks' => $purchasedWorks
+
+        $favoriteWorks = $user->favorites()
+            ->with('creator')
+            ->orderBy('favorites.created_at', 'desc')
+            ->get()
+            ->map(function ($contentPage) {
+                return [
+                    'id' => $contentPage->id,
+                    'title' => $contentPage->title,
+                    'cover_image' => $contentPage->cover_image,
+                    'author_name' => $contentPage->creator->name ?? 'Unknown Author',
+                    'display_price' => $contentPage->display_price,
+                    'discount_percentage' => $contentPage->discount_percentage,
+                    'average_rating' => $contentPage->average_rating,
+                ];
+            });
+
+        return Inertia::render('Mypage', [
+            'purchasedWorks' => $purchasedWorks,
+            'favoriteWorks' => $favoriteWorks,
+            'userInfo' => [
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
         ]);
     }
 

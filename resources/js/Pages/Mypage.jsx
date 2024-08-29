@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Header from '../Components/Header';
-import PurchasedWorks from './PurchasedWorks'; //インポートしてくる感じ
+import PurchasedWorks from './PurchasedWorks';
+import FavoriteWorks from './FavoriteWorks';
 
-
-const Mypage = ({purchasedWorks}) => {
+const Mypage = ({ purchasedWorks, favoriteWorks }) => {
+  console.log('Mypage props:', { purchasedWorks, favoriteWorks });
+  
+  // 安全性チェックを追加
+    if (!favoriteWorks || !Array.isArray(favoriteWorks)) {
+        return <div>お気に入りの作品はありません。</div>;
+    }
+    
   const [activeTab, setActiveTab] = useState('account-info');
   const [userInfo, setUserInfo] = useState(null);
   const [editMode, setEditMode] = useState(false);
@@ -21,7 +28,8 @@ const Mypage = ({purchasedWorks}) => {
   const navItems = [
     { id: 'account-info', label: 'アカウント情報' },
     { id: 'purchased', label: '購入済み' },
-    { id: 'following-favorites', label: 'フォロー/お気に入り' },
+    { id: 'favorites', label: 'お気に入り' },
+    { id: 'following', label: 'フォロー' },
     { id: 'creator-dashboard', label: 'クリエイター画面' },
   ];
 
@@ -202,8 +210,13 @@ const Mypage = ({purchasedWorks}) => {
             {success && <p className="text-green-500 mt-2">{success}</p>}
           </div>
         )}
+        
         {activeTab === 'purchased' && (
           <PurchasedWorks purchasedWorks={purchasedWorks} />
+        )}
+        
+        {activeTab === 'favorites' && (
+          <FavoriteWorks favoriteWorks={favoriteWorks} />
         )}
 
         {/* 他のタブのコンテンツをここに追加 */}
