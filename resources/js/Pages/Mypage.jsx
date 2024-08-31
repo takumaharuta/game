@@ -4,21 +4,17 @@ import axios from 'axios';
 import Header from '../Components/Header';
 import PurchasedWorks from './PurchasedWorks';
 import FavoriteWorks from './FavoriteWorks';
+import CreatorDashboard from './CreatorDashboard';
 
-const Mypage = ({ purchasedWorks, favoriteWorks }) => {
-  console.log('Mypage props:', { purchasedWorks, favoriteWorks });
-
-  // 安全性チェックを追加
-  if (!favoriteWorks || !Array.isArray(favoriteWorks)) {
-    return <div>お気に入りの作品はありません。</div>;
-  }
+const Mypage = ({ purchasedWorks = [], favoriteWorks = [], initialUserInfo = {}, creatorInfo = null, works = [] }) => {
+  console.log('Mypage props:', { purchasedWorks, favoriteWorks, initialUserInfo, creatorInfo, works });
 
   const [activeTab, setActiveTab] = useState('account-info');
-  const [userInfo, setUserInfo] = useState(null);
+  const [userInfo, setUserInfo] = useState(initialUserInfo);
   const [editMode, setEditMode] = useState(false);
   const [editedInfo, setEditedInfo] = useState({
-    name: '',
-    email: '',
+    name: initialUserInfo?.name || '',
+    email: initialUserInfo?.email || '',
     currentPassword: '',
     newPassword: '',
     confirmNewPassword: ''
@@ -34,10 +30,10 @@ const Mypage = ({ purchasedWorks, favoriteWorks }) => {
   ];
 
   useEffect(() => {
-    if (activeTab === 'account-info') {
+    if (activeTab === 'account-info' && !userInfo.name) {
       fetchUserInfo();
     }
-  }, [activeTab]);
+  }, [activeTab, userInfo]);
 
   const fetchUserInfo = async () => {
     try {
@@ -45,8 +41,8 @@ const Mypage = ({ purchasedWorks, favoriteWorks }) => {
       setUserInfo(response.data);
       setEditedInfo(prevState => ({
         ...prevState,
-        name: response.data.name,
-        email: response.data.email
+        name: response.data.name || '',
+        email: response.data.email || ''
       }));
     } catch (error) {
       console.error('Failed to fetch user info:', error);
@@ -134,8 +130,8 @@ const Mypage = ({ purchasedWorks, favoriteWorks }) => {
             <h2 className="text-xl font-bold mb-4">アカウント情報</h2>
             {!editMode ? (
               <>
-                <div className="mb-2"><strong>ユーザー名:</strong> {userInfo.name}</div>
-                <div className="mb-2"><strong>メールアドレス:</strong> {userInfo.email}</div>
+                <div className="mb-2"><strong>ユーザー名:</strong> {userInfo.name || 'Not set'}</div>
+                <div className="mb-2"><strong>メールアドレス:</strong> {userInfo.email || 'Not set'}</div>
                 <div className="mb-4"><strong>パスワード:</strong> ********</div>
                 <div className="flex space-x-2">
                   <button onClick={handleEdit} className="bg-blue-500 text-white px-4 py-2 rounded">
@@ -220,17 +216,18 @@ const Mypage = ({ purchasedWorks, favoriteWorks }) => {
             {success && <p className="text-green-500 mt-2">{success}</p>}
           </div>
         )}
-        
+
         {activeTab === 'purchased' && (
           <PurchasedWorks purchasedWorks={purchasedWorks} />
         )}
-        
+
         {activeTab === 'favorites' && (
           <FavoriteWorks favoriteWorks={favoriteWorks} />
         )}
 
-        {/* 他のタブのコンテンツをここに追加 */}
-        
+        {activeTab === 'creator-dashboard' && (
+          <CreatorDashboard creatorInfo={creatorInfo} works={works} />
+        )}
       </main>
     </div>
   );
