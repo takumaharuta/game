@@ -20,5 +20,10 @@ class Creator extends Model
     {
         return $this->belongsTo(User::class);
     }
+    
+    public function contentPages()
+    {
+        return $this->hasMany(ContentPage::class);
+    }
 }
 

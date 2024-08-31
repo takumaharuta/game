@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Purchase;
+use App\Models\Creator;
 
 class MypageController extends Controller
 {
@@ -42,6 +43,28 @@ class MypageController extends Controller
                 ];
             });
 
+        $creator = Creator::where('user_id', $user->id)->first();
+        $creatorInfo = null;
+        $works = [];
+
+        if ($creator) {
+            $creatorInfo = [
+                'name' => $creator->name,
+                'icon' => $creator->icon_url,
+                'profile' => $creator->profile,
+            ];
+            $works = ContentPage::where('creator_id', $creator->id)
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($work) {
+                    return [
+                        'id' => $work->id,
+                        'title' => $work->title,
+                        'cover_image' => $work->cover_image,
+                    ];
+                });
+        }
+
         return Inertia::render('Mypage', [
             'purchasedWorks' => $purchasedWorks,
             'favoriteWorks' => $favoriteWorks,
@@ -49,6 +72,8 @@ class MypageController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
             ],
+            'creatorInfo' => $creatorInfo,
+            'works' => $works,
         ]);
     }
 
