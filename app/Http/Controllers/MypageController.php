@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Purchase;
 use App\Models\Creator;
+use App\Models\ContentPage;
 
 class MypageController extends Controller
 {
@@ -49,9 +50,9 @@ class MypageController extends Controller
 
         if ($creator) {
             $creatorInfo = [
-                'name' => $creator->name,
-                'icon' => $creator->icon_url,
-                'profile' => $creator->profile,
+                'name' => $creator->pen_name,
+                'icon' => $creator->profile_image,
+                'profile' => $creator->bio,
             ];
             $works = ContentPage::where('creator_id', $creator->id)
                 ->orderBy('created_at', 'desc')

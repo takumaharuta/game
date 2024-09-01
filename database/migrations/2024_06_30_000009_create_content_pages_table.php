@@ -13,7 +13,7 @@ return new class extends Migration
         Schema::create('content_pages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('content_id')->nullable()->constrained('contents')->onDelete('cascade');
-            $table->foreignId('creator_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('creator_id')->nullable()->constrained('creators')->onDelete('set null');
             $table->string('title');
             $table->text('description')->nullable();
             $table->decimal('display_price', 10, 2)->nullable();
