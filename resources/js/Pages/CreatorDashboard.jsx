@@ -30,7 +30,7 @@ const CreatorDashboard = ({ creatorInfo, works }) => {
         <p>クリエイター情報が登録されていません。</p>
       )}
       <div className="mt-4">
-        <Link href="/content-page/create" className="bg-blue-500 text-white px-4 py-2 rounded">
+        <Link href="/content-page/edit" className="bg-blue-500 text-white px-4 py-2 rounded">
           作品を制作する
         </Link>
       </div>
