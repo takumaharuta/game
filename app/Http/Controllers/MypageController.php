@@ -13,6 +13,11 @@ class MypageController extends Controller
     public function index()
     {
         $user = auth()->user();
+        
+        $user_id = auth()->user()->id;
+        $creator = Creator::Where('user_id', '=', $user_id)->first();
+        $creator_id = $creator['id'];
+        $creator_content = ContentPage::where('creator_id', '=', $creator_id)->get();
 
         $purchasedWorks = Purchase::with('contentPage.creator')
             ->where('user_id', $user->id)
@@ -75,6 +80,7 @@ class MypageController extends Controller
             ],
             'creatorInfo' => $creatorInfo,
             'works' => $works,
+            'contentPages' => $creator_content, //これを持ってくる
         ]);
     }
 

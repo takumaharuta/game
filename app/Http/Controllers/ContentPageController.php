@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ContentPage;
 use App\Models\Tag;
+use App\Models\Creator;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
@@ -77,6 +78,11 @@ class ContentPageController extends Controller
             if (isset($validatedData['cover_image']) && Str::startsWith($validatedData['cover_image'], 'data:image')) {
                 $validatedData['cover_image'] = $this->uploadToCloudinary($validatedData['cover_image']);
             }
+            
+            $user_id = auth()->user()->id;
+            $creator = Creator::Where('user_id', '=', $user_id)->first();
+            
+            $validatedData['creator_id'] = $creator['id'];
 
             $contentPage = ContentPage::create($validatedData);
 

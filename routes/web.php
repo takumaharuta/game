@@ -8,6 +8,7 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PurchasedWorksController;
 use App\Http\Controllers\TagController;
+use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\MypageController;
 use Illuminate\Foundation\Application;
@@ -62,6 +63,10 @@ Route::middleware('auth')->group(function () {
     // Comment routes
     Route::post('/content-page/{id}/comment', [CommentController::class, 'store'])->name('comment.store');
     Route::put('/content-page/{id}/comment/{commentId}', [CommentController::class, 'update'])->name('comment.update');
+    
+    // Creator routes
+    Route::post('/creator/register', [CreatorController::class, 'register'])->name('creator.register');
+    Route::post('/creator/update', [CreatorController::class, 'update'])->name('creator.update');
 
     // 購入済み作品一覧
     Route::get('/purchased-works', [PurchasedWorksController::class, 'index'])->name('purchased-works.index');
