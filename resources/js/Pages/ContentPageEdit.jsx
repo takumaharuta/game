@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/inertia-react';
 import axios from 'axios';
 import { useDropzone } from 'react-dropzone';
 import { Inertia } from '@inertiajs/inertia';
+import Header from '../Components/Header';
 
 const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
     const [contentPage, setContentPage] = useState(() => ({
