@@ -16,13 +16,28 @@ const ContentPagePreview = () => {
     };
     
     const handlePublish = () => {
-        Inertia.put(`/content-page/${contentPage.id}`, {}, {
+        Inertia.put(`/content-page/${contentPage.id}/publish`, {}, {
             preserveState: false,
             preserveScroll: false,
             onSuccess: () => {
+                console.log('Publish successful');
+                // ContentPageコンポーネントに直接遷移
                 Inertia.visit(`/content-page/${contentPage.id}`);
             },
+            onError: (errors) => {
+                console.error('Publish failed', errors);
+            }
         });
+    };
+    
+    const formatDescription = (description) => {
+        if (!description) return null;
+        return description.split('\n').map((line, index) => (
+            <React.Fragment key={index}>
+                {line}
+                <br />
+            </React.Fragment>
+        ));
     };
     
     return (
@@ -70,7 +85,7 @@ const ContentPagePreview = () => {
                 </div>
                 <div className="mb-6 p-4 border rounded shadow-md">
                     <h3 className="text-xl font-bold mb-2">説明</h3>
-                    <p>{contentPage.description}</p>
+                    <p>{formatDescription(contentPage.description)}</p>
                 </div>
                 <div className="p-4 border rounded shadow-md">
                     <h3 className="text-xl font-bold mb-2">タグ</h3>

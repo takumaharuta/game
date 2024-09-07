@@ -63,46 +63,72 @@ class ContentPageController extends Controller
 
     public function store(Request $request)
     {
-        try {
-            DB::beginTransaction();
 
-            $validatedData = $request->validate([
-                'title' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'display_price' => 'required|numeric|min:0',
-                'discount_percentage' => 'nullable|integer|min:0|max:100',
-                'tags' => 'nullable|array',
-                'cover_image' => 'nullable|string',
-            ]);
+        DB::beginTransaction();
+        try {
+            $validatedData = $this->validateContentPage($request);
+            $validatedData['creator_id'] = auth()->user()->creator->id;
 
             if (isset($validatedData['cover_image']) && Str::startsWith($validatedData['cover_image'], 'data:image')) {
                 $validatedData['cover_image'] = $this->uploadToCloudinary($validatedData['cover_image']);
             }
-            
-            $user_id = auth()->user()->id;
-            $creator = Creator::Where('user_id', '=', $user_id)->first();
-            
-            $validatedData['creator_id'] = $creator['id'];
 
             $contentPage = ContentPage::create($validatedData);
-
-            // タグの処理
-            if (isset($validatedData['tags']) && is_array($validatedData['tags'])) {
-                $tagIds = [];
-                foreach ($validatedData['tags'] as $tagName) {
-                    $tag = Tag::firstOrCreate(['name' => $tagName]);
-                    $tagIds[] = $tag->id;
-                }
-                $contentPage->tags()->sync($tagIds);
-            }
+            $this->syncTags($contentPage, $validatedData['tags'] ?? []);
 
             DB::commit();
 
-            return Inertia::location("/content-page/preview/{$contentPage->id}");
+            return Inertia::location(route('content-page.preview', ['id' => $contentPage->id]));
         } catch (\Exception $e) {
             DB::rollBack();
-            return Inertia::render('ErrorPage', ['message' => 'Failed to save content page: ' . $e->getMessage()]);
+            return Inertia::render('ErrorPage', ['message' => "Failed to create content page: " . $e->getMessage()]);
         }
+    }
+
+    public function update(Request $request, $id)
+    {
+
+        DB::beginTransaction();
+        try {
+            $contentPage = ContentPage::findOrFail($id);
+            $validatedData = $this->validateContentPage($request);
+
+            if (isset($validatedData['cover_image']) && Str::startsWith($validatedData['cover_image'], 'data:image')) {
+                $validatedData['cover_image'] = $this->uploadToCloudinary($validatedData['cover_image']);
+            }
+
+            $contentPage->update($validatedData);
+            $this->syncTags($contentPage, $validatedData['tags'] ?? []);
+
+            DB::commit();
+
+            return Inertia::location(route('content-page.preview', ['id' => $contentPage->id]));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return Inertia::render('ErrorPage', ['message' => "Failed to update content page: " . $e->getMessage()]);
+        }
+    }
+
+    private function validateContentPage(Request $request)
+    {
+        return $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'display_price' => 'required|integer|min:0',
+            'discount_percentage' => 'required|integer|min:0|max:95',
+            'tags' => 'nullable|array',
+            'cover_image' => 'nullable|string',
+        ]);
+    }
+
+    private function syncTags($contentPage, $tags)
+    {
+        $tagIds = [];
+        foreach ($tags as $tagName) {
+            $tag = Tag::firstOrCreate(['name' => $tagName]);
+            $tagIds[] = $tag->id;
+        }
+        $contentPage->tags()->sync($tagIds);
     }
 
     public function preview($id)
@@ -122,58 +148,36 @@ class ContentPageController extends Controller
         }
     }
     
-    public function update(Request $request, $id)
-    {
-        DB::beginTransaction();
-        try {
-            $contentPage = ContentPage::findOrFail($id);
-            $validatedData = $request->validate([
-                'title' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'display_price' => 'required|integer|min:0',
-                'discount_percentage' => 'required|integer|min:0|max:95',
-                'tags' => 'nullable|array',
-                'cover_image' => 'nullable|string',
-            ]);
-
-            if (isset($validatedData['cover_image']) && Str::startsWith($validatedData['cover_image'], 'data:image')) {
-                $validatedData['cover_image'] = $this->uploadToCloudinary($validatedData['cover_image']);
-            }
-
-            $contentPage->update($validatedData);
-
-            if (isset($validatedData['tags']) && is_array($validatedData['tags'])) {
-                $tagIds = [];
-                foreach ($validatedData['tags'] as $tagName) {
-                    $tag = Tag::firstOrCreate(['name' => $tagName]);
-                    $tagIds[] = $tag->id;
-                }
-                $contentPage->tags()->sync($tagIds);
-            }
-
-            DB::commit();
-
-            return Inertia::location("/content-page/{$id}");
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return Inertia::render('ErrorPage', ['message' => 'Failed to update content page: ' . $e->getMessage()]);
-        }
-    }
-    
     public function publish($id)
     {
-        $contentPage = ContentPage::findOrFail($id);
-        $contentPage->is_published = 1;
-        $contentPage->save();
-        return redirect("/content-page/{$id}");
+        try {
+            $contentPage = ContentPage::findOrFail($id);
+            $contentPage->is_published = true;
+            $contentPage->save();
+    
+            // ContentPageコンポーネントにリダイレクト
+            return Inertia::location(route('content-page.show', ['id' => $contentPage->id]));
+        } catch (\Exception $e) {
+            return Inertia::render('ErrorPage', [
+                'message' => 'Failed to publish content page: ' . $e->getMessage()
+            ]);
+        }
     }
     
     public function show($id)
     {
         $contentPage = ContentPage::withCount('favorites')->findOrFail($id);
-        $isCreator = auth()->check() && auth()->user()->id === $contentPage->creator_id;
+        
+        $user_id = auth()->id();
+        $creator = Creator::where('user_id', $user_id)->first();
+        
+        $isCreator = false;
+        if ($creator && $contentPage->creator_id) {
+            $isCreator = $creator->id === $contentPage->creator_id;
+        }
+    
         $isFavorite = auth()->check() && auth()->user()->favorites()->where('content_page_id', $id)->exists();
-
+    
         return Inertia::render('ContentPage', [
             'contentPage' => array_merge($contentPage->toArray(), [
                 'favorites_count' => $contentPage->favorites_count,
