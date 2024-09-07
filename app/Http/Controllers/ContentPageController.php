@@ -166,7 +166,7 @@ class ContentPageController extends Controller
     
     public function show($id)
     {
-        $contentPage = ContentPage::withCount('favorites')->findOrFail($id);
+        $contentPage = ContentPage::with('creator')->withCount('favorites')->findOrFail($id);
         
         $user_id = auth()->id();
         $creator = Creator::where('user_id', $user_id)->first();
@@ -183,6 +183,7 @@ class ContentPageController extends Controller
                 'favorites_count' => $contentPage->favorites_count,
                 'average_rating' => $contentPage->average_rating,
                 'rating_count' => $contentPage->rating_count,
+                'author_name' => $contentPage->creator->pen_name ?? 'Unknown Author', // ここを追加
             ]),
             'isCreator' => $isCreator,
             'isFavorite' => $isFavorite,

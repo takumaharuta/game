@@ -14,10 +14,11 @@ class TopPageController extends Controller
             ->whereIsPublished(true)
             ->inRandomOrder()
             ->take(10)
-            ->get()
-            ->map(function ($content) {
-                return $this->formatContentData($content);
-            });
+            ->get();
+
+        $recommendedContents = $recommendedContents->map(function ($content) {
+            return $this->formatContentData($content);
+        });
 
         $rankingContents = ContentPage::with('creator')
             ->whereIsPublished(true)
@@ -49,13 +50,16 @@ class TopPageController extends Controller
 
     private function formatContentData($content)
     {
+        // Ensure creator relation is loaded
+        $content->load('creator');
+
         return [
             'id' => $content->id,
             'title' => $content->title,
             'cover_image' => $content->cover_image,
             'display_price' => $content->display_price,
             'discount_percentage' => $content->discount_percentage,
-            'author_name' => $content->creator->name ?? 'Unknown Author',
+            'author_name' => $content->creator->pen_name ?? 'Unknown Author', // ここを修正
             'average_rating' => $content->average_rating ?? 0,
             'rating_count' => $content->rating_count ?? 0,
             'purchase_count' => $content->purchase_count,

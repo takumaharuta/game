@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Purchase;
@@ -14,11 +12,8 @@ class MypageController extends Controller
     {
         $user = auth()->user();
         
-        $user_id = auth()->user()->id;
-        $creator = Creator::Where('user_id', '=', $user_id)->first();
-        $creator_id = $creator['id'];
-        $creator_content = ContentPage::where('creator_id', '=', $creator_id)->get();
-
+        $creator = Creator::where('user_id', $user->id)->first();
+        
         $purchasedWorks = Purchase::with('contentPage.creator')
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
@@ -28,7 +23,7 @@ class MypageController extends Controller
                     'id' => $purchase->contentPage->id,
                     'title' => $purchase->contentPage->title,
                     'cover_image' => $purchase->contentPage->cover_image,
-                    'author_name' => $purchase->contentPage->creator->name ?? 'Unknown Author',
+                    'author_name' => $purchase->contentPage->creator->pen_name ?? 'Unknown Author', // ここを修正
                     'purchase_date' => $purchase->created_at->format('Y-m-d'),
                 ];
             });
@@ -42,16 +37,16 @@ class MypageController extends Controller
                     'id' => $contentPage->id,
                     'title' => $contentPage->title,
                     'cover_image' => $contentPage->cover_image,
-                    'author_name' => $contentPage->creator->name ?? 'Unknown Author',
+                    'author_name' => $contentPage->creator->pen_name ?? 'Unknown Author', // ここを修正
                     'display_price' => $contentPage->display_price,
                     'discount_percentage' => $contentPage->discount_percentage,
                     'average_rating' => $contentPage->average_rating,
                 ];
             });
 
-        $creator = Creator::where('user_id', $user->id)->first();
         $creatorInfo = null;
         $works = [];
+        $creator_content = [];
 
         if ($creator) {
             $creatorInfo = [
@@ -69,6 +64,7 @@ class MypageController extends Controller
                         'cover_image' => $work->cover_image,
                     ];
                 });
+            $creator_content = ContentPage::where('creator_id', $creator->id)->get();
         }
 
         return Inertia::render('Mypage', [
@@ -80,7 +76,7 @@ class MypageController extends Controller
             ],
             'creatorInfo' => $creatorInfo,
             'works' => $works,
-            'contentPages' => $creator_content, //これを持ってくる
+            'contentPages' => $creator_content,
         ]);
     }
 
