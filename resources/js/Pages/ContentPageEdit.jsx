@@ -24,6 +24,7 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
     const [tagInput, setTagInput] = useState('');
     const [priceError, setPriceError] = useState('');
     const [isPreviewMode, setIsPreviewMode] = useState(false);
+    
 
     useEffect(() => {
         setMounted(true);
@@ -148,16 +149,41 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
         }));
     };
     
-    const saveContentPage = () => {
-        const formData = {
-            ...contentPage,
-            tags: contentPage.tags.map(tag => tag.name)
+    
+        const saveContentPage = () => {
+            const formData = {
+                ...contentPage,
+                tags: contentPage.tags.map(tag => tag.name)
+            };
+        
+            console.log('saveContentPage called', formData);
+        
+            if (contentPage.id) {
+                console.log('Updating existing page', contentPage.id);
+                Inertia.put(`/content-page/${contentPage.id}`, formData, {
+                    preserveState: false,
+                    preserveScroll: true,
+                    onSuccess: (page) => {
+                        console.log('Update successful', page);
+                    },
+                    onError: (errors) => {
+                        console.error('Update failed', errors);
+                    }
+                });
+            } else {
+                console.log('Creating new page');
+                Inertia.post('/content-page', formData, {
+                    preserveState: false,
+                    preserveScroll: true,
+                    onSuccess: (page) => {
+                        console.log('Creation successful', page);
+                    },
+                    onError: (errors) => {
+                        console.error('Creation failed', errors);
+                    }
+                });
+            }
         };
-        Inertia.post('/content-page', formData, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
 
     const calculateDisplayPrice = () => {
         const price = contentPage.display_price;

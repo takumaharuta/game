@@ -18,9 +18,10 @@ class ContentPage extends Model
         'discount_percentage' => 'integer',
         'purchase_count' => 'integer',
         'tags' => 'array',
+        'creator_id' => 'integer',
     ];
     
-    protected $appends = ['scroll_type', 'creator_id', 'average_rating'];
+    protected $appends = ['scroll_type', 'average_rating'];
 
     public function content()
     {
@@ -30,11 +31,6 @@ class ContentPage extends Model
     public function getScrollTypeAttribute()
     {
         return $this->content?->scroll_type;
-    }
-
-    public function getCreatorIdAttribute()
-    {
-        return $this->content?->creator_id;
     }
     
     public function tags()

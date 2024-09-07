@@ -46,12 +46,13 @@ Route::middleware('auth')->group(function () {
     
     // ContentPage routes
     Route::get('/content-page', [ContentPageController::class, 'create'])->name('content-page.create');
-    Route::post('/content-page', [ContentPageController::class, 'store'])->name('content-page.store');
+    Route::post('/content-page', [ContentPageController::class, 'store'])->name('content-page.store'); //こっちは新規作成時に呼び出されてる
     Route::get('/content-page/edit/{id?}', [ContentPageController::class, 'edit'])->name('content-page.edit');
     Route::get('/content-page/preview/{id}', [ContentPageController::class, 'preview'])->name('content-page.preview');
-    Route::post('/content-page/{id}', [ContentPageController::class, 'update'])->name('content-page.update');
-    Route::put('/content-page/{id}', [ContentPageController::class, 'publish'])->name('content-page.publish');
+    Route::put('/content-page/{id}', [ContentPageController::class, 'update'])->name('content-page.update'); //これが更新時に呼び出されてる
     
+    Route::put('/content-page/{id}/publish', [ContentPageController::class, 'publish'])->name('content-page.publish');
+
     // Payment routes
     Route::get('/payment/{id}', [PaymentController::class, 'showForm'])->name('payment.form');
     Route::post('/payment/{id}/process', [PaymentController::class, 'processPayment'])->name('payment.process');

@@ -22,6 +22,9 @@ const ContentPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [favoriteCount, setFavoriteCount] = useState(contentPage.favorites_count || 0);
     const [purchaseCount, setPurchaseCount] = useState(contentPage.purchase_count || 0);
+    
+    // デバッグ用のコンソールログ
+    console.log('ContentPage props:', { contentPage, isCreator, isFavorite, auth });
 
     useEffect(() => {
         const fetchComments = async () => {
@@ -114,6 +117,16 @@ const ContentPage = () => {
         return new Date(dateString).toLocaleDateString('ja-JP', options);
     };
     
+    const formatDescription = (description) => {
+        if (!description) return null;
+        return description.split('\n').map((line, index) => (
+            <React.Fragment key={index}>
+                {line}
+                <br />
+            </React.Fragment>
+        ));
+    };
+    
     return (
         <div className="content-page">
             <Header />
@@ -167,6 +180,14 @@ const ContentPage = () => {
                             <FaHeart className="mr-2" />
                             {isLoading ? '処理中...' : (isCurrentlyFavorite ? 'お気に入り済み' : 'お気に入りに追加')}
                         </button>
+                            {isCreator && (
+                            <button 
+                                onClick={handleEdit}
+                                className="bg-blue-500 text-white font-bold py-2 px-4 rounded w-full mt-2"
+                            >
+                                作品を編集する
+                            </button>
+                        )}
                     </div>
                 </div>
                 <div className="mb-4 border p-4 rounded">
@@ -194,7 +215,7 @@ const ContentPage = () => {
                 </div>
                 <div className="mb-4 border p-4 rounded">
                     <h3 className="text-xl font-bold mb-2">作品詳細</h3>
-                    <p>{contentPage.description}</p>
+                    <p>{formatDescription(contentPage.description)}</p>
                 </div>
                 <div className="mb-4">
                     <h3 className="text-xl font-bold mb-2">コメント一覧</h3>
