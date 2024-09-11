@@ -38,16 +38,21 @@ class ContentController extends Controller
         return response()->json($content->load('pages.choices'));
     }
 
-    public function edit($id = null)
+    // public function edit($id = null)
+    // {
+    //     if ($id) {
+    //         $content = Content::findOrFail($id);
+    //         $this->authorize('update', $content);
+    //     } else {
+    //         $content = new Content();
+    //         $this->authorize('create', Content::class);
+    //     }
+    //     return Inertia::render('ContentEdit', ['content' => $content]);
+    // }
+    
+    public function edit()
     {
-        if ($id) {
-            $content = Content::findOrFail($id);
-            $this->authorize('update', $content);
-        } else {
-            $content = new Content();
-            $this->authorize('create', Content::class);
-        }
-        return Inertia::render('ContentEdit', ['content' => $content]);
+        return Inertia::render('ContentEdit');
     }
     
     public function editContentPage($id = null)
