@@ -9,21 +9,25 @@ import ReactFlow, {
   Handle,
   Position,
   MarkerType,
+  getBezierPath,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import { FaPlus, FaTrash, FaImage } from 'react-icons/fa';
 
 const StartNode = ({ data, isConnectable, selected }) => (
   <div style={{ 
     padding: '10px',
     backgroundColor: '#4CAF50',
     color: 'white',
-    borderRadius: '5px',
-    width: '100px',
-    height: '50px',
+    borderRadius: '10px',
+    width: '120px',
+    height: '60px',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     border: selected ? '2px solid blue' : '1px solid black',
+    fontSize: '18px',
+    fontWeight: 'bold',
   }}>
     {data.label}
     <Handle type="source" position={Position.Right} isConnectable={isConnectable} />
@@ -51,36 +55,42 @@ const PageNode = ({ data, isConnectable, selected }) => {
       <div style={{ 
         padding: '10px',
         backgroundColor: 'white',
-        borderRadius: '5px',
-        width: '150px',
-        height: '220px',
+        borderRadius: '10px',
+        width: '180px',
+        height: '320px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'space-between',
         border: selected ? '2px solid blue' : '1px solid black',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
       }}>
-        <div>{data.label}</div>
+        <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>{data.label}</div>
         <div 
           onClick={handleImageClick}
           style={{ 
             width: '100%', 
-            height: '120px', 
+            height: '240px', 
             border: '1px dashed gray', 
+            borderRadius: '8px',
             display: 'flex', 
             justifyContent: 'center', 
             alignItems: 'center',
             cursor: 'pointer',
+            overflow: 'hidden',
           }}
         >
           {data.image ? (
             <img 
               src={data.image} 
               alt={`Page ${data.id}`} 
-              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
             />
           ) : (
-            <p>クリックして画像を追加</p>
+            <div style={{ textAlign: 'center' }}>
+              <FaImage size={40} color="#888" />
+              <p style={{ marginTop: '10px', color: '#888' }}>タップして画像を追加</p>
+            </div>
           )}
         </div>
         <input
@@ -96,23 +106,71 @@ const PageNode = ({ data, isConnectable, selected }) => {
   );
 };
 
+const CustomEdge = ({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  style = {},
+  markerEnd,
+  selected,
+}) => {
+  const edgePath = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+    curvature: 0.3,
+  });
+
+  return (
+    <>
+      <path
+        id={id}
+        style={{
+          ...style,
+          strokeWidth: selected ? 6 : 4,
+          stroke: selected ? '#3182ce' : '#555',
+        }}
+        className="react-flow__edge-path"
+        d={edgePath}
+        markerEnd={markerEnd}
+      />
+      {selected && (
+        <path
+          d={edgePath}
+          fill="none"
+          stroke="#3182ce"
+          strokeWidth={10}
+          strokeOpacity={0.3}
+          pointerEvents="none"
+        />
+      )}
+    </>
+  );
+};
+
 const ContentEdit = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [nextId, setNextId] = useState(1);
 
   useEffect(() => {
-    // コンポーネントのマウント時に「Start」ノードのみを設定
     setNodes([
       { 
         id: 'start', 
         type: 'startNode', 
-        position: { x: 0, y: 0 }, 
+        position: { x: 0, y: 150 }, 
         data: { label: 'Start' } 
       }
     ]);
     console.log('Initial Start node set');
-  }, []); // 依存配列を空にして、一度だけ実行されるようにする
+  }, []);
 
   const onAddImage = useCallback((pageId, file) => {
     const reader = new FileReader();
@@ -130,25 +188,67 @@ const ContentEdit = () => {
   }, [setNodes]);
 
   const defaultEdgeOptions = {
-    type: 'bezier',
-    style: { strokeWidth: 3, stroke: '#555' },
+    type: 'custom',
+    style: { 
+      strokeWidth: 4,
+      stroke: '#555',
+    },
     markerEnd: {
       type: MarkerType.ArrowClosed,
-      width: 20,
-      height: 20,
+      width: 25,
+      height: 25,
       color: '#555',
     },
-    curvature: 0.5,
   };
 
   const onConnect = useCallback((params) => 
     setEdges((eds) => addEdge({ ...params, ...defaultEdgeOptions }, eds)), 
   [defaultEdgeOptions]);
 
+  const onEdgeUpdate = useCallback((oldEdge, newConnection) => 
+    setEdges((els) => els.map((el) => (el.id === oldEdge.id ? newConnection : el))),
+  [setEdges]);
+
   const nodeTypes = useMemo(() => ({ 
     startNode: StartNode,
     pageNode: PageNode 
   }), []);
+
+  const edgeTypes = useMemo(() => ({
+    custom: CustomEdge,
+  }), []);
+
+  const getDistanceFromStart = useCallback((nodeId, edgesArray) => {
+    let distance = 0;
+    let currentId = nodeId;
+
+    while (currentId !== 'start') {
+      const edge = edgesArray.find(e => e.target === currentId);
+      if (!edge) break;
+      distance++;
+      currentId = edge.source;
+    }
+
+    return distance;
+  }, []);
+
+  const updatePageNumbers = useCallback(() => {
+    setNodes(currentNodes => {
+      return currentNodes.map(node => {
+        if (node.type === 'pageNode') {
+          const distance = getDistanceFromStart(node.id, edges);
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: `Page ${distance}`
+            }
+          };
+        }
+        return node;
+      });
+    });
+  }, [edges, getDistanceFromStart, setNodes]);
 
   const onAddPage = useCallback(() => {
     const selectedNodes = nodes.filter(node => node.selected);
@@ -158,33 +258,39 @@ const ContentEdit = () => {
     }
 
     const sourceNode = selectedNodes[0];
+    const newNodeId = `page-${nextId}`;
+
+    const newEdge = { 
+      id: `e${sourceNode.id}-${newNodeId}`, 
+      source: sourceNode.id, 
+      target: newNodeId,
+      ...defaultEdgeOptions,
+    };
+
+    const distance = getDistanceFromStart(newNodeId, [...edges, newEdge]) + 1;
+
     const newNode = {
-      id: `page-${nextId}`,
+      id: newNodeId,
       type: 'pageNode',
       position: { 
         x: sourceNode.position.x + 250, 
         y: sourceNode.position.y 
       },
       data: { 
-        label: `Page ${nextId}`, 
+        label: `Page ${distance}`, 
         image: null,
         onAddImage: onAddImage,
-        id: `page-${nextId}`,
+        id: newNodeId,
       },
     };
+
     setNodes((nds) => [...nds, newNode]);
-    setEdges((eds) => [
-      ...eds,
-      { 
-        id: `e${sourceNode.id}-${newNode.id}`, 
-        source: sourceNode.id, 
-        target: newNode.id,
-        ...defaultEdgeOptions,
-      },
-    ]);
+    setEdges((eds) => [...eds, newEdge]);
     setNextId((id) => id + 1);
-    console.log('New page added:', newNode);
-  }, [nextId, nodes, setNodes, setEdges, onAddImage, defaultEdgeOptions]);
+
+    updatePageNumbers();
+
+  }, [nextId, nodes, edges, setNodes, setEdges, onAddImage, defaultEdgeOptions, getDistanceFromStart, updatePageNumbers]);
 
   const onDeletePage = useCallback(() => {
     setNodes((nds) => nds.filter((node) => node.id === 'start' || !node.selected));
@@ -192,21 +298,29 @@ const ContentEdit = () => {
       !nodes.find((node) => node.selected && (node.id === edge.source || node.id === edge.target))
     ));
     console.log('Page(s) deleted');
-  }, [nodes, setNodes, setEdges]);
+    
+    updatePageNumbers();
+  }, [nodes, setNodes, setEdges, updatePageNumbers]);
 
-  const onSelectionChange = useCallback(({ nodes: selectedNodes }) => {
+  const onSelectionChange = useCallback(({ nodes: selectedNodes, edges: selectedEdges }) => {
     setNodes((nds) =>
       nds.map((node) => ({
         ...node,
         selected: selectedNodes.some((selectedNode) => selectedNode.id === node.id)
       }))
     );
-    console.log('Selection changed:', selectedNodes);
-  }, [setNodes]);
+    setEdges((eds) =>
+      eds.map((edge) => ({
+        ...edge,
+        selected: selectedEdges.some((selectedEdge) => selectedEdge.id === edge.id)
+      }))
+    );
+    console.log('Selection changed:', { selectedNodes, selectedEdges });
+  }, [setNodes, setEdges]);
 
   useEffect(() => {
-    console.log('Current nodes:', nodes);
-  }, [nodes]);
+    updatePageNumbers();
+  }, [edges, updatePageNumbers]);
 
   return (
     <div style={{ height: '100vh', width: '100%', position: 'relative' }}>
@@ -216,18 +330,65 @@ const ContentEdit = () => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onEdgeUpdate={onEdgeUpdate}
         onSelectionChange={onSelectionChange}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         fitView
+        style={{ height: '100%', width: '100%' }}
+        zoomOnScroll={false}
+        zoomOnPinch={true}
+        panOnScroll={true}
+        panOnScrollSpeed={0.5}
+        nodesDraggable={false}
       >
-        <Controls />
+        <Controls showZoom={false} />
         <MiniMap />
         <Background variant="dots" gap={12} size={1} />
       </ReactFlow>
-      <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)' }}>
-        <button onClick={onAddPage}>新規ページ</button>
-        <button onClick={onDeletePage}>選択したページを削除</button>
+      <div style={{
+        position: 'absolute',
+        bottom: 20,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        gap: '10px'
+      }}>
+        <button
+          onClick={onAddPage}
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}
+        >
+          <FaPlus /> 新規ページを追加
+        </button>
+        <button
+          onClick={onDeletePage}
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            backgroundColor: '#f44336',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}
+        >
+          <FaTrash /> 選択したページを削除
+        </button>
       </div>
     </div>
   );
