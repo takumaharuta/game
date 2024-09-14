@@ -12,7 +12,15 @@ import ReactFlow, {
   getBezierPath,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { FaPlus, FaTrash, FaImage } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaImage, FaEdit } from 'react-icons/fa';
+
+const handleStyle = {
+  width: '16px',
+  height: '16px',
+  border: '3px solid #555',
+  borderRadius: '50%',
+  backgroundColor: '#fff',
+};
 
 const StartNode = ({ data, isConnectable, selected }) => (
   <div style={{ 
@@ -30,7 +38,12 @@ const StartNode = ({ data, isConnectable, selected }) => (
     fontWeight: 'bold',
   }}>
     {data.label}
-    <Handle type="source" position={Position.Right} isConnectable={isConnectable} />
+    <Handle 
+      type="source" 
+      position={Position.Right} 
+      isConnectable={isConnectable}
+      style={handleStyle}
+    />
   </div>
 );
 
@@ -51,7 +64,12 @@ const PageNode = ({ data, isConnectable, selected }) => {
 
   return (
     <>
-      <Handle type="target" position={Position.Left} isConnectable={isConnectable} />
+      <Handle 
+        type="target" 
+        position={Position.Left} 
+        isConnectable={isConnectable}
+        style={handleStyle}
+      />
       <div style={{ 
         padding: '10px',
         backgroundColor: 'white',
@@ -101,7 +119,12 @@ const PageNode = ({ data, isConnectable, selected }) => {
           accept="image/*"
         />
       </div>
-      <Handle type="source" position={Position.Right} isConnectable={isConnectable} />
+      <Handle 
+        type="source" 
+        position={Position.Right} 
+        isConnectable={isConnectable}
+        style={handleStyle}
+      />
     </>
   );
 };
@@ -116,7 +139,7 @@ const CustomEdge = ({
   targetPosition,
   style = {},
   markerEnd,
-  selected,
+  data,
 }) => {
   const edgePath = getBezierPath({
     sourceX,
@@ -125,31 +148,61 @@ const CustomEdge = ({
     targetX,
     targetY,
     targetPosition,
-    curvature: 0.3,
   });
+
+  const [edgeCenterX, edgeCenterY] = [(sourceX + targetX) / 2, (sourceY + targetY) / 2];
+
+  const onEdgeClick = (evt, id) => {
+    evt.stopPropagation();
+    const newLabel = window.prompt('選択肢のテキストを入力してください:', data?.label || '');
+    if (newLabel !== null) {
+      data.onEdgeLabelChange(id, newLabel);
+    }
+  };
 
   return (
     <>
       <path
         id={id}
-        style={{
-          ...style,
-          strokeWidth: selected ? 6 : 4,
-          stroke: selected ? '#3182ce' : '#555',
-        }}
+        style={style}
         className="react-flow__edge-path"
         d={edgePath}
         markerEnd={markerEnd}
       />
-      {selected && (
-        <path
-          d={edgePath}
-          fill="none"
-          stroke="#3182ce"
-          strokeWidth={10}
-          strokeOpacity={0.3}
-          pointerEvents="none"
-        />
+      {data.showLabel && (
+        <foreignObject
+          width={100}
+          height={40}
+          x={edgeCenterX - 50}
+          y={edgeCenterY - 20}
+          className="edgebutton-foreignobject"
+          requiredExtensions="http://www.w3.org/1999/xhtml"
+        >
+          <div
+            style={{
+              background: 'white',
+              padding: '4px',
+              borderRadius: '4px',
+              textAlign: 'center',
+              fontSize: '12px',
+              pointerEvents: 'all',
+            }}
+          >
+            <span>{data?.label || '選択肢'}</span>
+            <button
+              className="edgebutton"
+              onClick={(event) => onEdgeClick(event, id)}
+              style={{
+                marginLeft: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                padding: '2px 4px',
+              }}
+            >
+              <FaEdit />
+            </button>
+          </div>
+        </foreignObject>
       )}
     </>
   );
@@ -190,33 +243,16 @@ const ContentEdit = () => {
   const defaultEdgeOptions = {
     type: 'custom',
     style: { 
-      strokeWidth: 4,
+      strokeWidth: 3,
       stroke: '#555',
     },
     markerEnd: {
       type: MarkerType.ArrowClosed,
-      width: 25,
-      height: 25,
+      width: 20,
+      height: 20,
       color: '#555',
     },
   };
-
-  const onConnect = useCallback((params) => 
-    setEdges((eds) => addEdge({ ...params, ...defaultEdgeOptions }, eds)), 
-  [defaultEdgeOptions]);
-
-  const onEdgeUpdate = useCallback((oldEdge, newConnection) => 
-    setEdges((els) => els.map((el) => (el.id === oldEdge.id ? newConnection : el))),
-  [setEdges]);
-
-  const nodeTypes = useMemo(() => ({ 
-    startNode: StartNode,
-    pageNode: PageNode 
-  }), []);
-
-  const edgeTypes = useMemo(() => ({
-    custom: CustomEdge,
-  }), []);
 
   const getDistanceFromStart = useCallback((nodeId, edgesArray) => {
     let distance = 0;
@@ -232,23 +268,56 @@ const ContentEdit = () => {
     return distance;
   }, []);
 
-  const updatePageNumbers = useCallback(() => {
-    setNodes(currentNodes => {
-      return currentNodes.map(node => {
-        if (node.type === 'pageNode') {
-          const distance = getDistanceFromStart(node.id, edges);
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              label: `Page ${distance}`
-            }
-          };
-        }
-        return node;
+  const updateEdgeLabels = useCallback(() => {
+    setEdges((currentEdges) => {
+      const edgeCounts = {};
+      currentEdges.forEach(edge => {
+        edgeCounts[edge.source] = (edgeCounts[edge.source] || 0) + 1;
       });
+
+      return currentEdges.map(edge => ({
+        ...edge,
+        data: {
+          ...edge.data,
+          showLabel: edgeCounts[edge.source] > 1
+        }
+      }));
     });
-  }, [edges, getDistanceFromStart, setNodes]);
+  }, [setEdges]);
+
+  const onEdgeLabelChange = useCallback((edgeId, newLabel) => {
+    setEdges((eds) =>
+      eds.map((edge) => {
+        if (edge.id === edgeId) {
+          return { ...edge, data: { ...edge.data, label: newLabel } };
+        }
+        return edge;
+      })
+    );
+  }, [setEdges]);
+
+  const onConnect = useCallback((params) => {
+    setEdges((eds) => {
+      const newEdges = addEdge({ 
+        ...params, 
+        ...defaultEdgeOptions, 
+        data: { label: '新しい選択肢', onEdgeLabelChange, showLabel: false } 
+      }, eds);
+      
+      const edgeCounts = {};
+      newEdges.forEach(edge => {
+        edgeCounts[edge.source] = (edgeCounts[edge.source] || 0) + 1;
+      });
+
+      return newEdges.map(edge => ({
+        ...edge,
+        data: {
+          ...edge.data,
+          showLabel: edgeCounts[edge.source] > 1
+        }
+      }));
+    });
+  }, [defaultEdgeOptions, onEdgeLabelChange]);
 
   const onAddPage = useCallback(() => {
     const selectedNodes = nodes.filter(node => node.selected);
@@ -259,23 +328,61 @@ const ContentEdit = () => {
 
     const sourceNode = selectedNodes[0];
     const newNodeId = `page-${nextId}`;
+    
+    // 新しいページの位置を計算
+    const baseX = sourceNode.position.x + 300; // 基本的な X 座標
+    const baseY = sourceNode.position.y; // 基本的な Y 座標
+
+    // 既存のノードの位置を取得
+    const existingPositions = nodes.map(node => ({ x: node.position.x, y: node.position.y }));
+
+    // 新しい位置を見つける
+    let newX = baseX;
+    let newY = baseY;
+    let attempts = 0;
+    const maxAttempts = 100; // 最大試行回数
+    const gridSize = 50; // グリッドサイズ
+
+    while (attempts < maxAttempts) {
+      const isOverlapping = existingPositions.some(pos => 
+        Math.abs(pos.x - newX) < 200 && Math.abs(pos.y - newY) < 350
+      );
+
+      if (!isOverlapping) {
+        break;
+      }
+
+      // スパイラル状に新しい位置を探す
+      const angle = 0.5 * attempts;
+      const radius = gridSize * (1 + attempts / 10);
+      newX = baseX + radius * Math.cos(angle);
+      newY = baseY + radius * Math.sin(angle);
+
+      attempts++;
+    }
+
+    if (attempts === maxAttempts) {
+      alert('適切な位置が見つかりませんでした。レイアウトを調整してください。');
+      return;
+    }
 
     const newEdge = { 
       id: `e${sourceNode.id}-${newNodeId}`, 
       source: sourceNode.id, 
       target: newNodeId,
+      type: 'custom',
+      data: { label: '新しい選択肢', onEdgeLabelChange, showLabel: false },
       ...defaultEdgeOptions,
     };
-
-    const distance = getDistanceFromStart(newNodeId, [...edges, newEdge]) + 1;
+    
+    const tempEdges = [...edges, newEdge];
+    
+    const distance = getDistanceFromStart(newNodeId, tempEdges);
 
     const newNode = {
       id: newNodeId,
       type: 'pageNode',
-      position: { 
-        x: sourceNode.position.x + 250, 
-        y: sourceNode.position.y 
-      },
+      position: { x: newX, y: newY },
       data: { 
         label: `Page ${distance}`, 
         image: null,
@@ -285,22 +392,127 @@ const ContentEdit = () => {
     };
 
     setNodes((nds) => [...nds, newNode]);
-    setEdges((eds) => [...eds, newEdge]);
+    setEdges((eds) => {
+      const newEdges = [...eds, newEdge];
+      const edgeCounts = {};
+      newEdges.forEach(edge => {
+        edgeCounts[edge.source] = (edgeCounts[edge.source] || 0) + 1;
+      });
+
+      return newEdges.map(edge => ({
+        ...edge,
+        data: {
+          ...edge.data,
+          showLabel: edgeCounts[edge.source] > 1
+        }
+      }));
+    });
     setNextId((id) => id + 1);
 
-    updatePageNumbers();
-
-  }, [nextId, nodes, edges, setNodes, setEdges, onAddImage, defaultEdgeOptions, getDistanceFromStart, updatePageNumbers]);
+    setNodes((currentNodes) => {
+      return currentNodes.map(node => {
+        if (node.type === 'pageNode' && node.id !== newNodeId) {
+          const nodeDistance = getDistanceFromStart(node.id, tempEdges);
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: `Page ${nodeDistance}`
+            }
+          };
+        }
+        return node;
+      });
+    });
+  }, [nextId, nodes, edges, setNodes, setEdges, onAddImage, defaultEdgeOptions, onEdgeLabelChange, getDistanceFromStart]);
 
   const onDeletePage = useCallback(() => {
-    setNodes((nds) => nds.filter((node) => node.id === 'start' || !node.selected));
-    setEdges((eds) => eds.filter((edge) => 
-      !nodes.find((node) => node.selected && (node.id === edge.source || node.id === edge.target))
-    ));
-    console.log('Page(s) deleted');
+    const nodesToDelete = nodes.filter(node => node.selected && node.id !== 'start');
+    const nodeIdsToDelete = new Set(nodesToDelete.map(node => node.id));
+
+    setNodes((nds) => nds.filter((node) => !nodeIdsToDelete.has(node.id)));
+    setEdges((eds) => {
+      const newEdges = eds.filter((edge) => 
+        !nodeIdsToDelete.has(edge.source) && !nodeIdsToDelete.has(edge.target)
+      );
+
+      const edgeCounts = {};
+      newEdges.forEach(edge => {
+        edgeCounts[edge.source] = (edgeCounts[edge.source] || 0) + 1;
+      });
+
+      return newEdges.map(edge => ({
+        ...edge,
+        data: {
+          ...edge.data,
+          showLabel: edgeCounts[edge.source] > 1
+        }
+      }));
+    });
     
-    updatePageNumbers();
-  }, [nodes, setNodes, setEdges, updatePageNumbers]);
+    setNodes((currentNodes) => {
+      const currentEdges = edges.filter((edge) => 
+        !nodeIdsToDelete.has(edge.source) && !nodeIdsToDelete.has(edge.target)
+      );
+      return currentNodes.map(node => {
+        if (node.type === 'pageNode') {
+          const nodeDistance = getDistanceFromStart(node.id, currentEdges);
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: `Page ${nodeDistance}`
+            }
+          };
+        }
+        return node;
+      });
+    });
+  }, [nodes, edges, setNodes, setEdges, getDistanceFromStart]);
+
+  const onNodesDelete = useCallback((deletedNodes) => {
+    const nodeIdsToDelete = new Set(deletedNodes.map(node => node.id));
+
+    setEdges((eds) => {
+      const newEdges = eds.filter((edge) => 
+        !nodeIdsToDelete.has(edge.source) && !nodeIdsToDelete.has(edge.target)
+      );
+
+      const edgeCounts = {};
+      newEdges.forEach(edge => {
+        edgeCounts[edge.source] = (edgeCounts[edge.source] || 0) + 1;
+      });
+
+      return newEdges.map(edge => ({
+        ...edge,
+        data: {
+          ...edge.data,
+          showLabel: edgeCounts[edge.source] > 1
+        }
+      }));
+    });
+
+    setNodes((currentNodes) => {
+      const remainingNodes = currentNodes.filter((node) => !nodeIdsToDelete.has(node.id));
+      return remainingNodes.map(node => {
+        if (node.type === 'pageNode') {
+          const nodeDistance = getDistanceFromStart(node.id, edges);
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: `Page ${nodeDistance}`
+            }
+          };
+        }
+        return node;
+      });
+    });
+  }, [edges, setEdges, setNodes, getDistanceFromStart]);
+
+  const onEdgesDelete = useCallback(() => {
+    updateEdgeLabels();
+  }, [updateEdgeLabels]);
 
   const onSelectionChange = useCallback(({ nodes: selectedNodes, edges: selectedEdges }) => {
     setNodes((nds) =>
@@ -315,12 +527,16 @@ const ContentEdit = () => {
         selected: selectedEdges.some((selectedEdge) => selectedEdge.id === edge.id)
       }))
     );
-    console.log('Selection changed:', { selectedNodes, selectedEdges });
   }, [setNodes, setEdges]);
 
-  useEffect(() => {
-    updatePageNumbers();
-  }, [edges, updatePageNumbers]);
+  const nodeTypes = useMemo(() => ({ 
+    startNode: StartNode,
+    pageNode: PageNode 
+  }), []);
+
+  const edgeTypes = useMemo(() => ({
+    custom: CustomEdge,
+  }), []);
 
   return (
     <div style={{ height: '100vh', width: '100%', position: 'relative' }}>
@@ -329,21 +545,16 @@ const ContentEdit = () => {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodesDelete={onNodesDelete}
+        onEdgesDelete={onEdgesDelete}
         onConnect={onConnect}
-        onEdgeUpdate={onEdgeUpdate}
         onSelectionChange={onSelectionChange}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         fitView
-        style={{ height: '100%', width: '100%' }}
-        zoomOnScroll={false}
-        zoomOnPinch={true}
-        panOnScroll={true}
-        panOnScrollSpeed={0.5}
-        nodesDraggable={false}
       >
-        <Controls showZoom={false} />
+        <Controls />
         <MiniMap />
         <Background variant="dots" gap={12} size={1} />
       </ReactFlow>
