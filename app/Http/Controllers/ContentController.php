@@ -3,50 +3,92 @@
 namespace App\Http\Controllers;
 
 use App\Models\Content;
-use App\Models\ContentPage;
+use App\Models\Page;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\DB;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ContentController extends Controller
 {
     public function store(Request $request)
     {
-        $this->authorize('create', Content::class);
-
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'nodes' => 'required|array',
-            'edges' => 'required|array',
-        ]);
-
-        $content = Content::create([
-            'title' => $validatedData['title'],
-            'creator_id' => Auth::id(),
-        ]);
-
-        foreach ($validatedData['nodes'] as $node) {
-            $page = $content->pages()->create([
-                'title' => $node['data']['label'],
-                'content' => $node['data']['content'],
-                'position_x' => $node['position']['x'],
-                'position_y' => $node['position']['y'],
-                'image_path' => $node['data']['image'] ?? null,
+        \Log::info('Store method called');
+        \Log::info('Request data:', $request->all());
+    
+        try {
+            $this->authorize('create', Content::class);
+    
+            $validatedData = $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'nodes' => 'required|array',
+                'edges' => 'required|array',
+            ]);
+    
+            DB::beginTransaction();
+    
+            $content = Content::create([
+                'title' => $validatedData['title'],
+                'description' => $validatedData['description'] ?? null,
+                'creator_id' => Auth::id(),
+                'is_published' => false,
+            ]);
+    
+            \Log::info('Content created', ['content_id' => $content->id]);
+    
+            foreach ($validatedData['nodes'] as $index => $node) {
+                $pageData = [
+                    'title' => $node['data']['label'],
+                    'content' => $node['data']['content'] ?? '',
+                    'position_x' => $node['position']['x'],
+                    'position_y' => $node['position']['y'],
+                    'page_number' => $index + 1,
+                    'has_choices' => false,
+                ];
+    
+                if (isset($node['data']['image']) && $node['data']['image']) {
+                    $result = Cloudinary::upload($node['data']['image']);
+                    $pageData['cover_image'] = $result->getSecurePath();
+                }
+    
+                $page = $content->pages()->create($pageData);
+                \Log::info('Page created', ['page_id' => $page->id]);
+            }
+    
+            foreach ($validatedData['edges'] as $edge) {
+                $sourcePage = $content->pages()->where('title', $edge['source'])->first();
+                $targetPage = $content->pages()->where('title', $edge['target'])->first();
+    
+                if ($sourcePage && $targetPage) {
+                    $choice = $sourcePage->choices()->create([
+                        'text' => $edge['data']['label'],
+                        'next_page_id' => $targetPage->id,
+                    ]);
+                    \Log::info('Choice created', ['choice_id' => $choice->id]);
+                } else {
+                    \Log::warning('Failed to create choice', ['edge' => $edge]);
+                }
+            }
+    
+            DB::commit();
+    
+            \Log::info('Store method completed successfully');
+    
+            return redirect()->route('content.preview', ['id' => $content->id]);
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Content store error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return Inertia::render('Error', [
+                'message' => 'Failed to save content: ' . $e->getMessage(),
+                'status' => 500
             ]);
         }
-
-        foreach ($validatedData['edges'] as $edge) {
-            $sourcePage = $content->pages()->where('id', substr($edge['source'], 5))->first();
-            $targetPage = $content->pages()->where('id', substr($edge['target'], 5))->first();
-
-            $sourcePage->choices()->create([
-                'text' => $edge['data']['label'],
-                'next_page_id' => $targetPage->id,
-            ]);
-        }
-
-        return redirect()->route('content.preview', $content->id);
     }
 
     public function update(Request $request, $id)
@@ -69,13 +111,19 @@ class ContentController extends Controller
 
         // 新しいページを作成
         foreach ($validatedData['nodes'] as $node) {
-            $page = $content->pages()->create([
+            $pageData = [
                 'title' => $node['data']['label'],
                 'content' => $node['data']['content'],
                 'position_x' => $node['position']['x'],
                 'position_y' => $node['position']['y'],
-                'image_path' => $node['data']['image'] ?? null,
-            ]);
+            ];
+
+            if (isset($node['data']['image']) && $node['data']['image']) {
+                $result = Cloudinary::upload($node['data']['image']);
+                $pageData['cover_image'] = $result->getSecurePath();
+            }
+
+            $page = $content->pages()->create($pageData);
         }
 
         // 新しいチョイスを作成
@@ -97,186 +145,74 @@ class ContentController extends Controller
         return response()->json($content->load('pages.choices'));
     }
 
-    // public function edit($id = null)
-    // {
-    //     if ($id) {
-    //         $content = Content::findOrFail($id);
-    //         $this->authorize('update', $content);
-    //     } else {
-    //         $content = new Content();
-    //         $this->authorize('create', Content::class);
-    //     }
-    //     return Inertia::render('ContentEdit', ['content' => $content]);
-    // }
-    
     public function edit($id = null)
     {
-        if ($id) {
-            $content = Content::findOrFail($id);
-            $this->authorize('update', $content);
-        } else {
-            $content = new Content();
-            $this->authorize('create', Content::class);
-        }
-        
-        // ReactFlowで使用するためのノードとエッジのデータを準備
-        $nodes = $content->pages->map(function ($page) {
-            return [
-                'id' => 'page-' . $page->id,
-                'type' => 'pageNode',
-                'position' => ['x' => $page->position_x, 'y' => $page->position_y],
-                'data' => [
-                    'label' => $page->title,
-                    'content' => $page->content,
-                    'image' => $page->image_path,
-                ]
-            ];
-        })->toArray();
-
-        $edges = $content->pages->flatMap(function ($page) {
-            return $page->choices->map(function ($choice) use ($page) {
+        \Log::info('Edit method called', ['id' => $id]);
+    
+        try {
+            if ($id) {
+                $content = Content::findOrFail($id);
+                $this->authorize('update', $content);
+                \Log::info('Editing existing content', ['content_id' => $content->id]);
+            } else {
+                $content = new Content();
+                $this->authorize('create', Content::class);
+                \Log::info('Creating new content');
+            }
+    
+            // ReactFlowで使用するためのノードとエッジのデータを準備
+            $nodes = $content->pages->map(function ($page) {
                 return [
-                    'id' => 'edge-' . $page->id . '-' . $choice->next_page_id,
-                    'source' => 'page-' . $page->id,
-                    'target' => 'page-' . $choice->next_page_id,
+                    'id' => 'page-' . $page->id,
+                    'type' => 'pageNode',
+                    'position' => ['x' => $page->position_x, 'y' => $page->position_y],
                     'data' => [
-                        'label' => $choice->text,
+                        'label' => $page->title,
+                        'content' => $page->content,
+                        'image' => $page->cover_image,
                     ]
                 ];
-            });
-        })->toArray();
-
-        return Inertia::render('ContentEdit', [
-            'content' => [
-                'id' => $content->id,
-                'title' => $content->title,
-                'nodes' => $nodes,
-                'edges' => $edges,
-            ]
-        ]);
-    }
+            })->toArray();
     
-    public function editContentPage($id = null)
-    {
-        if ($id) {
-            $contentPage = ContentPage::with('content')->findOrFail($id);
-            $this->authorize('update', $contentPage);
-        } else {
-            $contentPage = new ContentPage();
-            $this->authorize('create', ContentPage::class);
+            $edges = $content->pages->flatMap(function ($page) {
+                return $page->choices->map(function ($choice) use ($page) {
+                    return [
+                        'id' => 'edge-' . $page->id . '-' . $choice->next_page_id,
+                        'source' => 'page-' . $page->id,
+                        'target' => 'page-' . $choice->next_page_id,
+                        'data' => [
+                            'label' => $choice->text,
+                        ]
+                    ];
+                });
+            })->toArray();
+    
+            \Log::info('Edit data prepared', ['nodes_count' => count($nodes), 'edges_count' => count($edges)]);
+    
+            return Inertia::render('ContentEdit', [
+                'content' => [
+                    'id' => $content->id,
+                    'title' => $content->title,
+                    'nodes' => $nodes,
+                    'edges' => $edges,
+                ]
+            ]);
+    
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            \Log::error('Authorization failed in edit method', ['error' => $e->getMessage()]);
+            return Inertia::render('Error', ['message' => 'Unauthorized: ' . $e->getMessage()])->toResponse(request())->setStatusCode(403);
+        } catch (\Exception $e) {
+            \Log::error('Error in edit method', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return Inertia::render('Error', ['message' => 'Failed to load content for editing: ' . $e->getMessage()]);
         }
-        return Inertia::render('ContentPageEdit', ['contentPage' => $contentPage]);
     }
 
     public function preview($id)
     {
         $content = Content::with('pages.choices')->findOrFail($id);
-        
-        $pages = $content->pages->map(function ($page) {
-            return [
-                'id' => $page->id,
-                'title' => $page->title,
-                'content' => $page->content,
-                'image' => $page->image_path,
-                'choices' => $page->choices->map(function ($choice) {
-                    return [
-                        'text' => $choice->text,
-                        'next_page' => $choice->next_page_id,
-                    ];
-                }),
-            ];
-        });
-
-        return Inertia::render('Preview', [
-            'content' => [
-                'id' => $content->id,
-                'title' => $content->title,
-                'pages' => $pages,
-            ]
-        ]);
+        return Inertia::render('ContentPreview', ['content' => $content]);
     }
-
-    public function showContentPage($id)
-    {
-        $content = Content::with('pages.choices')->findOrFail($id);
-        return Inertia::render('ContentPage', ['content' => $content]);
-    }
-    
-    // ContentPage 関連の新しいメソッド
-    public function storeContentPage(Request $request)
-    {
-        $this->authorize('create', ContentPage::class);
-
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'discount' => 'nullable|numeric|min:0|max:100',
-            'tags' => 'nullable|json',
-            'is_published' => 'boolean',
-            'cover_image' => 'nullable|image|max:2048',
-        ]);
-
-        $contentPage = new ContentPage($validatedData);
-        $contentPage->user_id = Auth::id();
-
-        if ($request->hasFile('cover_image')) {
-            $path = $request->file('cover_image')->store('cover_images', 'public');
-            $contentPage->cover_image = $path;
-        }
-
-        $contentPage->save();
-
-        return response()->json($contentPage, 201);
-    }
-
-    public function updateContentPage(Request $request, $id)
-    {
-        $contentPage = ContentPage::findOrFail($id);
-        $this->authorize('update', $contentPage);
-
-        $validatedData = $request->validate([
-            'title' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'sometimes|required|numeric|min:0',
-            'discount' => 'nullable|numeric|min:0|max:100',
-            'tags' => 'nullable|json',
-            'is_published' => 'boolean',
-            'cover_image' => 'nullable|image|max:2048',
-        ]);
-
-        if ($request->hasFile('cover_image')) {
-            $path = $request->file('cover_image')->store('cover_images', 'public');
-            $validatedData['cover_image'] = $path;
-        }
-
-        $contentPage->update($validatedData);
-
-        return response()->json($contentPage);
-    }
-
-    public function togglePublishContentPage($id)
-    {
-        $contentPage = ContentPage::findOrFail($id);
-        $this->authorize('update', $contentPage);
-
-        $contentPage->is_published = !$contentPage->is_published;
-        $contentPage->save();
-
-        return response()->json(['is_published' => $contentPage->is_published]);
-    }
-    
-    public function getPrice($id)
-    {
-        try {
-            $content = Content::findOrFail($id);
-            dd($content);
-            return response()->json(['price' => $content->display_price]);
-        } catch (\Exception $e) {
-            dd($content);
-            Log::error('価格取得エラー: ' . $e->getMessage());
-            return response()->json(['error' => '価格の取得に失敗しました'], 500);
-        }
-    }
-
 }

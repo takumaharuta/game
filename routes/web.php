@@ -41,11 +41,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Content routes
+    Route::post('/content', [ContentController::class, 'store'])->name('content.store');
     Route::get('/content/edit/{id?}', [ContentController::class, 'edit'])->name('content.edit');
-    Route::post('/content/edit', [ContentController::class, 'store'])->name('content.store');
-    Route::post('/content/edit/{id}', [ContentController::class, 'update'])->name('content.update');
+    Route::put('/content/{id}', [ContentController::class, 'update'])->name('content.update');
     Route::get('/content/preview/{id}', [ContentController::class, 'preview'])->name('content.preview');
-    
+    Route::put('/content/{id}/publish', [ContentController::class, 'publish'])->name('content.publish');
+    Route::post('/upload-image', [ContentController::class, 'uploadImage'])->name('upload.image');
+
+
     // ContentPage routes
     Route::get('/content-page', [ContentPageController::class, 'create'])->name('content-page.create');
     Route::post('/content-page', [ContentPageController::class, 'store'])->name('content-page.store'); //こっちは新規作成時に呼び出されてる
