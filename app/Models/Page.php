@@ -8,7 +8,23 @@ use Illuminate\Database\Eloquent\Model;
 class Page extends Model
 {
     use HasFactory;
-    protected $fillable = ['content_id', 'page_number', 'image_path'];
+
+    protected $fillable = [
+        'content_id',
+        'title',
+        'content',
+        'position_x',
+        'position_y',
+        'image_path',
+        'page_number',
+        'has_choices',
+    ];
+
+    protected $casts = [
+        'has_choices' => 'boolean',
+        'position_x' => 'float',
+        'position_y' => 'float',
+    ];
 
     public function content()
     {

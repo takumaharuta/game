@@ -12,7 +12,8 @@ import ReactFlow, {
   getBezierPath,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { FaPlus, FaTrash, FaImage, FaEdit } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaImage, FaEdit, FaSave } from 'react-icons/fa';
+import { Inertia } from '@inertiajs/inertia';
 
 const handleStyle = {
   width: '16px',
@@ -212,10 +213,11 @@ const ContentEdit = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [nextId, setNextId] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setNodes([
-      { 
+      {
         id: 'start', 
         type: 'startNode', 
         position: { x: 0, y: 150 }, 
@@ -227,11 +229,11 @@ const ContentEdit = () => {
 
   const onAddImage = useCallback((pageId, file) => {
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onloadend = () => {
       setNodes((nds) =>
         nds.map((node) => {
           if (node.id === pageId) {
-            return { ...node, data: { ...node.data, image: event.target.result } };
+            return { ...node, data: { ...node.data, image: reader.result } };
           }
           return node;
         })
@@ -330,8 +332,8 @@ const ContentEdit = () => {
     const newNodeId = `page-${nextId}`;
     
     // 新しいページの位置を計算
-    const baseX = sourceNode.position.x + 300; // 基本的な X 座標
-    const baseY = sourceNode.position.y; // 基本的な Y 座標
+    const baseX = sourceNode.position.x + 300;
+    const baseY = sourceNode.position.y;
 
     // 既存のノードの位置を取得
     const existingPositions = nodes.map(node => ({ x: node.position.x, y: node.position.y }));
@@ -340,8 +342,8 @@ const ContentEdit = () => {
     let newX = baseX;
     let newY = baseY;
     let attempts = 0;
-    const maxAttempts = 100; // 最大試行回数
-    const gridSize = 50; // グリッドサイズ
+    const maxAttempts = 100;
+    const gridSize = 50;
 
     while (attempts < maxAttempts) {
       const isOverlapping = existingPositions.some(pos => 
@@ -453,7 +455,7 @@ const ContentEdit = () => {
     setNodes((currentNodes) => {
       const currentEdges = edges.filter((edge) => 
         !nodeIdsToDelete.has(edge.source) && !nodeIdsToDelete.has(edge.target)
-      );
+    );
       return currentNodes.map(node => {
         if (node.type === 'pageNode') {
           const nodeDistance = getDistanceFromStart(node.id, currentEdges);
@@ -538,6 +540,36 @@ const ContentEdit = () => {
     custom: CustomEdge,
   }), []);
 
+  const onSave = useCallback(() => {
+    setIsSaving(true);
+    const contentData = {
+      title: 'New Content', // タイトルを適切に設定
+      nodes: nodes.map(node => ({
+        ...node,
+        data: {
+          ...node.data,
+          image: node.data.image && node.data.image.startsWith('data:') ? node.data.image : null
+        }
+      })),
+      edges: edges,
+    };
+  
+    Inertia.post('/content', contentData, {
+      preserveState: true,
+      preserveScroll: true,
+      onSuccess: (page) => {
+        setIsSaving(false);
+        console.log('Save successful', page);
+        // 成功時の処理を追加（例：通知やリダイレクト）
+      },
+      onError: (errors) => {
+        console.error('Save failed', errors);
+        setIsSaving(false);
+        alert('保存中にエラーが発生しました。');
+      },
+    });
+  }, [nodes, edges]);
+
   return (
     <div style={{ height: '100vh', width: '100%', position: 'relative' }}>
       <ReactFlow
@@ -599,6 +631,24 @@ const ContentEdit = () => {
           }}
         >
           <FaTrash /> 選択したページを削除
+        </button>
+        <button
+          onClick={onSave}
+          disabled={isSaving}
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            backgroundColor: '#2196F3',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}
+        >
+          <FaSave /> {isSaving ? '保存中...' : '保存してプレビュー'}
         </button>
       </div>
     </div>
