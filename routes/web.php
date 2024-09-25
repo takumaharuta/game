@@ -42,7 +42,7 @@ Route::middleware('auth')->group(function () {
 
     // Content routes
     Route::get('/content/edit/{id?}', [ContentController::class, 'edit'])->name('content.edit');
-    Route::post('/content/edit', [ContentController::class, 'store'])->name('content.store');
+    Route::post('/content', [ContentController::class, 'store'])->name('content.store');
     Route::post('/content/edit/{id}', [ContentController::class, 'update'])->name('content.update');
     Route::get('/content/preview/{id}', [ContentController::class, 'preview'])->name('content.preview');
     

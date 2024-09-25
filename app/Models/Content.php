@@ -9,23 +9,19 @@ class Content extends Model
 {
     use HasFactory;
     
-    protected $fillable = ['title', 
-        'title',
-        'description',
-        'display_price',
-        'original_price',
-        'scroll_type',
+    protected $fillable = [
+        'nodes',
+        'edges',
         'creator_id',
-        'discount_percentage'
-        ];
+    ];
 
-    public function pages()
+    protected $casts = [
+        'nodes' => 'json',
+        'edges' => 'json',
+    ];
+
+    public function creator()
     {
-        return $this->hasMany(Page::class);
-    }
-    
-    public function contentPages()
-    {
-        return $this->hasMany(ContentPage::class, 'content_id', 'id');
+        return $this->belongsTo(Creator::class);
     }
 }
