@@ -15,7 +15,7 @@ class Page extends Model
         'content',
         'position_x',
         'position_y',
-        'image_path',
+        'cover_image',
         'page_number',
         'has_choices',
     ];

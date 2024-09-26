@@ -198,7 +198,7 @@ const ContentPageEdit = ({ contentPage: initialContentPage = {} }) => {
     return (
         <div className="content-page-edit">
             <header className="flex justify-between items-center p-4 bg-blue-500 text-white">
-                <h1 className="text-2xl font-bold">Gamebook</h1>
+                <Link href="/" className="text-2xl font-bold">GameBook</Link>
                 <div>
                     <button onClick={saveContentPage} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-2">
                         保存

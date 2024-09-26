@@ -14,6 +14,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { FaPlus, FaTrash, FaImage, FaEdit, FaSave } from 'react-icons/fa';
 import { Inertia } from '@inertiajs/inertia';
+import axios from 'axios';
 
 const handleStyle = {
   width: '16px',
@@ -99,9 +100,9 @@ const PageNode = ({ data, isConnectable, selected }) => {
             overflow: 'hidden',
           }}
         >
-          {data.image ? (
+          {data.cover_image ? (
             <img 
-              src={data.image} 
+              src={data.cover_image} 
               alt={`Page ${data.id}`} 
               style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
             />
@@ -209,11 +210,12 @@ const CustomEdge = ({
   );
 };
 
-const ContentEdit = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+const ContentEdit = ({ content: initialContent = {} }) => {
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialContent.nodes || []);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialContent.edges || []);
   const [nextId, setNextId] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     setNodes([
@@ -233,7 +235,7 @@ const ContentEdit = () => {
       setNodes((nds) =>
         nds.map((node) => {
           if (node.id === pageId) {
-            return { ...node, data: { ...node.data, image: reader.result } };
+            return { ...node, data: { ...node.data, cover_image: reader.result } };
           }
           return node;
         })
@@ -542,33 +544,40 @@ const ContentEdit = () => {
 
   const onSave = useCallback(() => {
     setIsSaving(true);
+    setError(null);
+  
     const contentData = {
-      title: 'New Content', // タイトルを適切に設定
+      title: 'New Content',
+      description: 'Description of the content',
       nodes: nodes.map(node => ({
         ...node,
         data: {
           ...node.data,
-          image: node.data.image && node.data.image.startsWith('data:') ? node.data.image : null
+          cover_image: node.data.cover_image // これが Base64 エンコードされた画像データか URL であることを確認
         }
       })),
       edges: edges,
     };
   
-    Inertia.post('/content', contentData, {
+    console.log('Saving content data:', contentData); // デバッグ用
+  
+    const url = initialContent.id ? `/content/${initialContent.id}` : '/content';
+    const method = initialContent.id ? 'put' : 'post';
+  
+    Inertia[method](url, contentData, {
       preserveState: true,
       preserveScroll: true,
       onSuccess: (page) => {
         setIsSaving(false);
         console.log('Save successful', page);
-        // 成功時の処理を追加（例：通知やリダイレクト）
       },
       onError: (errors) => {
         console.error('Save failed', errors);
         setIsSaving(false);
-        alert('保存中にエラーが発生しました。');
+        setError('保存中にエラーが発生しました。');
       },
     });
-  }, [nodes, edges]);
+  }, [nodes, edges, initialContent.id]);
 
   return (
     <div style={{ height: '100vh', width: '100%', position: 'relative' }}>
