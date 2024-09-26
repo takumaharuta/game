@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Illuminate\Support\Str;
 
 class ContentController extends Controller
 {
@@ -27,6 +28,8 @@ class ContentController extends Controller
                 'edges' => 'required|array',
             ]);
     
+            \Log::info('Validation passed');
+    
             DB::beginTransaction();
     
             $content = Content::create([
@@ -38,29 +41,31 @@ class ContentController extends Controller
     
             \Log::info('Content created', ['content_id' => $content->id]);
     
-            foreach ($validatedData['nodes'] as $index => $node) {
-                $pageData = [
-                    'title' => $node['data']['label'],
-                    'content' => $node['data']['content'] ?? '',
-                    'position_x' => $node['position']['x'],
-                    'position_y' => $node['position']['y'],
-                    'page_number' => $index + 1,
-                    'has_choices' => false,
-                ];
+            foreach ($validatedData['nodes'] as $nodeData) {
+            $pageData = [
+                'content_id' => $content->id,
+                'title' => $nodeData['data']['label'],
+                'content' => $nodeData['data']['content'] ?? '',
+                'position_x' => $nodeData['position']['x'],
+                'position_y' => $nodeData['position']['y'],
+                'page_number' => $nodeData['data']['page_number'] ?? 0,
+                'has_choices' => false,
+            ];
     
-                if (isset($node['data']['image']) && $node['data']['image']) {
-                    $result = Cloudinary::upload($node['data']['image']);
-                    $pageData['cover_image'] = $result->getSecurePath();
-                }
-    
-                $page = $content->pages()->create($pageData);
-                \Log::info('Page created', ['page_id' => $page->id]);
+            if (isset($nodeData['data']['cover_image']) && Str::startsWith($nodeData['data']['cover_image'], 'data:image')) {
+                $uploadedImage = Cloudinary::upload($nodeData['data']['cover_image']);
+                $pageData['cover_image'] = $uploadedImage->getSecurePath();
+                \Log::info('Image uploaded', ['image_url' => $pageData['cover_image']]);
             }
     
+            $page = Page::create($pageData);
+            \Log::info('Page created', ['page_id' => $page->id, 'cover_image' => $page->cover_image]);
+        }
+
             foreach ($validatedData['edges'] as $edge) {
                 $sourcePage = $content->pages()->where('title', $edge['source'])->first();
                 $targetPage = $content->pages()->where('title', $edge['target'])->first();
-    
+
                 if ($sourcePage && $targetPage) {
                     $choice = $sourcePage->choices()->create([
                         'text' => $edge['data']['label'],
@@ -71,9 +76,9 @@ class ContentController extends Controller
                     \Log::warning('Failed to create choice', ['edge' => $edge]);
                 }
             }
-    
+
             DB::commit();
-    
+
             \Log::info('Store method completed successfully');
     
             return redirect()->route('content.preview', ['id' => $content->id]);
@@ -85,8 +90,7 @@ class ContentController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             return Inertia::render('Error', [
-                'message' => 'Failed to save content: ' . $e->getMessage(),
-                'status' => 500
+                'message' => 'Failed to save content: ' . $e->getMessage()
             ]);
         }
     }
