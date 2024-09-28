@@ -11,6 +11,7 @@ import ReactFlow, {
   MarkerType,
   getBezierPath,
 } from 'reactflow';
+import { Link } from '@inertiajs/inertia-react';
 import 'reactflow/dist/style.css';
 import { FaPlus, FaTrash, FaImage, FaEdit, FaSave } from 'react-icons/fa';
 import { Inertia } from '@inertiajs/inertia';
@@ -580,25 +581,34 @@ const ContentEdit = ({ content: initialContent = {} }) => {
   }, [nodes, edges, initialContent.id]);
 
   return (
-    <div style={{ height: '100vh', width: '100%', position: 'relative' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onNodesDelete={onNodesDelete}
-        onEdgesDelete={onEdgesDelete}
-        onConnect={onConnect}
-        onSelectionChange={onSelectionChange}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        defaultEdgeOptions={defaultEdgeOptions}
-        fitView
-      >
-        <Controls />
-        <MiniMap />
-        <Background variant="dots" gap={12} size={1} />
-      </ReactFlow>
+    
+    <div style={{ height: '100vh', width: '100%', display: 'flex', flexDirection: 'column' }}>
+      <header className="flex justify-between items-center p-4 bg-blue-500 text-white">
+        <Link href="/" className="text-2xl font-bold">GameBook</Link>
+        <div>
+          {/* ここに必要に応じて追加のヘッダー要素を配置できます */}
+        </div>
+      </header>
+     <div style={{ flex: 1, position: 'relative' }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onNodesDelete={onNodesDelete}
+          onEdgesDelete={onEdgesDelete}
+          onConnect={onConnect}
+          onSelectionChange={onSelectionChange}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          defaultEdgeOptions={defaultEdgeOptions}
+          fitView
+        >
+          <Controls />
+          <MiniMap />
+          <Background variant="dots" gap={12} size={1} />
+        </ReactFlow>
+      </div>
       <div style={{
         position: 'absolute',
         bottom: 20,
