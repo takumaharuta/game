@@ -28,8 +28,6 @@ class ContentController extends Controller
                 'edges' => 'required|array',
             ]);
     
-            \Log::info('Validation passed');
-    
             DB::beginTransaction();
     
             $content = Content::create([
@@ -39,46 +37,46 @@ class ContentController extends Controller
                 'is_published' => false,
             ]);
     
-            \Log::info('Content created', ['content_id' => $content->id]);
+            $pageIdMap = [];
     
             foreach ($validatedData['nodes'] as $nodeData) {
-            $pageData = [
-                'content_id' => $content->id,
-                'title' => $nodeData['data']['label'],
-                'content' => $nodeData['data']['content'] ?? '',
-                'position_x' => $nodeData['position']['x'],
-                'position_y' => $nodeData['position']['y'],
-                'page_number' => $nodeData['data']['page_number'] ?? 0,
-                'has_choices' => false,
-            ];
+                $pageData = [
+                    'content_id' => $content->id,
+                    'title' => $nodeData['data']['label'],
+                    'content' => $nodeData['data']['content'] ?? '',
+                    'position_x' => $nodeData['position']['x'],
+                    'position_y' => $nodeData['position']['y'],
+                    'page_number' => $nodeData['data']['page_number'] ?? 0,
+                    'has_choices' => false,
+                ];
     
-            if (isset($nodeData['data']['cover_image']) && Str::startsWith($nodeData['data']['cover_image'], 'data:image')) {
-                $uploadedImage = Cloudinary::upload($nodeData['data']['cover_image']);
-                $pageData['cover_image'] = $uploadedImage->getSecurePath();
-                \Log::info('Image uploaded', ['image_url' => $pageData['cover_image']]);
+                if (isset($nodeData['data']['cover_image']) && Str::startsWith($nodeData['data']['cover_image'], 'data:image')) {
+                    $uploadedImage = Cloudinary::upload($nodeData['data']['cover_image']);
+                    $pageData['cover_image'] = $uploadedImage->getSecurePath();
+                }
+    
+                $page = Page::create($pageData);
+                $pageIdMap[$nodeData['id']] = $page->id;
             }
     
-            $page = Page::create($pageData);
-            \Log::info('Page created', ['page_id' => $page->id, 'cover_image' => $page->cover_image]);
-        }
-
             foreach ($validatedData['edges'] as $edge) {
-                $sourcePage = $content->pages()->where('title', $edge['source'])->first();
-                $targetPage = $content->pages()->where('title', $edge['target'])->first();
-
-                if ($sourcePage && $targetPage) {
+                $sourceId = $pageIdMap[$edge['source']] ?? null;
+                $targetId = $pageIdMap[$edge['target']] ?? null;
+    
+                if ($sourceId && $targetId) {
+                    $sourcePage = Page::find($sourceId);
                     $choice = $sourcePage->choices()->create([
                         'text' => $edge['data']['label'],
-                        'next_page_id' => $targetPage->id,
+                        'next_page_id' => $targetId,
                     ]);
-                    \Log::info('Choice created', ['choice_id' => $choice->id]);
+                    $sourcePage->update(['has_choices' => true]);
                 } else {
-                    \Log::warning('Failed to create choice', ['edge' => $edge]);
+                    \Log::warning('Failed to create choice: Invalid page IDs', ['edge' => $edge]);
                 }
             }
-
+    
             DB::commit();
-
+    
             \Log::info('Store method completed successfully');
     
             return redirect()->route('content.preview', ['id' => $content->id]);
@@ -146,7 +144,9 @@ class ContentController extends Controller
 
     public function show(Content $content)
     {
-        return response()->json($content->load('pages.choices'));
+        $content->load('pages.choices');
+        \Log::debug('Content for API:', ['content' => $content->toArray()]);
+        return response()->json($content);
     }
 
     public function edit($id = null)
@@ -217,6 +217,7 @@ class ContentController extends Controller
     public function preview($id)
     {
         $content = Content::with('pages.choices')->findOrFail($id);
+        \Log::debug('Content for preview:', ['content' => $content->toArray()]);
         return Inertia::render('ContentPreview', ['content' => $content]);
     }
 }

@@ -10,6 +10,7 @@ const ContentPreview = ({ content }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [showChoices, setShowChoices] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -53,14 +54,27 @@ const ContentPreview = ({ content }) => {
   }, [loadedContent]);
 
   const handleNextPage = useCallback(() => {
-    setCurrentPageIndex(prevIndex => 
-      prevIndex < contentPages.length - 1 ? prevIndex + 1 : prevIndex
-    );
-  }, [contentPages]);
+    const currentPage = contentPages[currentPageIndex];
+    if (currentPage.choices && currentPage.choices.length > 0) {
+      setShowChoices(true);
+    } else {
+      setCurrentPageIndex(prevIndex => 
+        prevIndex < contentPages.length - 1 ? prevIndex + 1 : prevIndex
+      );
+    }
+  }, [contentPages, currentPageIndex]);
 
   const handlePreviousPage = useCallback(() => {
     setCurrentPageIndex(prevIndex => prevIndex > 0 ? prevIndex - 1 : prevIndex);
   }, []);
+
+  const handleChoiceSelection = useCallback((nextPageId) => {
+    const nextPageIndex = contentPages.findIndex(page => page.id === nextPageId);
+    if (nextPageIndex !== -1) {
+      setCurrentPageIndex(nextPageIndex);
+      setShowChoices(false);
+    }
+  }, [contentPages]);
 
   const [{ x }, api] = useSpring(() => ({ x: 0 }));
 
@@ -119,43 +133,67 @@ const ContentPreview = ({ content }) => {
   };
 
   return (
-    <div className="content-preview" onClick={handleClick}>
-      <h1>{loadedContent.title}</h1>
-      <animated.div 
-        {...(isMobile ? bind() : {})} 
-        style={{ x, touchAction: isMobile ? 'none' : 'auto' }} 
-        className="page"
-      >
-        <h2>{currentPage.title}</h2>
-        {currentPage.cover_image && (
-          <img 
-            src={getImageSrc(currentPage.cover_image)}
-            alt={currentPage.title} 
-            className="max-w-full max-h-64" 
-          />
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <header className="flex justify-between items-center p-4 bg-blue-500 text-white">
+        <Link href="/" className="text-2xl font-bold">GameBook</Link>
+        <div>
+          {/* ここに必要に応じて追加のヘッダー要素を配置できます */}
+        </div>
+      </header>
+
+      <div style={{ flex: 1, padding: '20px' }} className="content-preview" onClick={handleClick}>
+        <h1>{loadedContent.title}</h1>
+        <animated.div 
+          {...(isMobile ? bind() : {})} 
+          style={{ x, touchAction: isMobile ? 'none' : 'auto' }} 
+          className="page"
+        >
+          <h2>{currentPage.title}</h2>
+          {currentPage.cover_image && (
+            <img 
+              src={getImageSrc(currentPage.cover_image)}
+              alt={currentPage.title} 
+              className="max-w-full max-h-64" 
+            />
+          )}
+          <p>{currentPage.content}</p>
+        </animated.div>
+        {showChoices ? (
+          <div className="choices">
+            <h3>選択してください：</h3>
+            {currentPage.choices.map((choice) => (
+              <button
+                key={choice.id}
+                onClick={() => handleChoiceSelection(choice.next_page_id)}
+                className="choice-button"
+              >
+                {choice.text}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="navigation">
+            <button 
+              onClick={handlePreviousPage} 
+              disabled={currentPageIndex === 0}
+              className="nav-button"
+            >
+              前のページ
+            </button>
+            <span>{currentPageIndex + 1} / {contentPages.length}</span>
+            <button 
+              onClick={handleNextPage} 
+              disabled={currentPageIndex === contentPages.length - 1}
+              className="nav-button"
+            >
+              次のページ
+            </button>
+          </div>
         )}
-        <p>{currentPage.content}</p>
-      </animated.div>
-      <div className="navigation">
-        <button 
-          onClick={handlePreviousPage} 
-          disabled={currentPageIndex === 0}
-          className="nav-button"
-        >
-          前のページ
-        </button>
-        <span>{currentPageIndex + 1} / {contentPages.length}</span>
-        <button 
-          onClick={handleNextPage} 
-          disabled={currentPageIndex === contentPages.length - 1}
-          className="nav-button"
-        >
-          次のページ
-        </button>
+        <Link href={`/content/edit/${loadedContent.id}`} className="edit-link">
+          編集に戻る
+        </Link>
       </div>
-      <Link href={`/content/edit/${loadedContent.id}`} className="edit-link">
-        編集に戻る
-      </Link>
     </div>
   );
 };
